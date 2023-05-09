@@ -149,7 +149,7 @@ class BetterXGLMAttention(nn.Module):
         with torch.backends.cuda.sdp_kernel(
             enable_flash=True,
             enable_math=False,
-            enable_mem_efficient=False,
+            enable_mem_efficient=True,
         ):
             attn_output = torch.nn.functional.scaled_dot_product_attention(
                 query_states,

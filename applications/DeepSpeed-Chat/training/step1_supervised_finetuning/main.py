@@ -636,10 +636,10 @@ def main():
     # не работает с XGLM :(
     # model.resize_token_embeddings(len(tokenizer) // 64 * 65)
     model = model.half()
-    for name, param in model.named_parameters():
-        for num in [31]:
-            if not str(num) in str(name):
-                param.requires_grad = False
+    # for name, param in model.named_parameters():
+    #     for num in [31]:
+    #         if not str(num) in str(name):
+    #             param.requires_grad = False
     # model = BetterTransformer.transform(model)
     # model = torch.compile(model)
 
