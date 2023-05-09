@@ -1,0 +1,1 @@
+nohup python -u simple_translation.py > ./translation_scripts/simple_translation$(date +"%d.%m.%Y_%H:%M:%S").log &
