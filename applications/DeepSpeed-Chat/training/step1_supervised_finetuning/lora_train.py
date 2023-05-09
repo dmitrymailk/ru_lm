@@ -152,19 +152,15 @@ class BetterXGLMAttention(nn.Module):
         query_states = self._shape(query_states, tgt_len, bsz)
         key_states = key_states
         value_states = value_states
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=True,
-            # enable_math=True,
-            # enable_mem_efficient=True,
-        ):
-            attn_output = torch.nn.functional.scaled_dot_product_attention(
-                query_states,
-                key_states,
-                value_states,
-                # attn_mask=attention_mask,
-                dropout_p=self.dropout if self.training else 0.0,
-                is_causal=True,
-            )
+        attn_output = torch.nn.functional.scaled_dot_product_attention(
+            query_states,
+            key_states,
+            value_states,
+            attn_mask=attention_mask,
+            dropout_p=self.dropout if self.training else 0.0,
+            # is_causal=True,
+        )
+                
 
         if attn_output.size() != (bsz, self.num_heads, tgt_len, self.head_dim):
             raise ValueError(
@@ -179,7 +175,7 @@ class BetterXGLMAttention(nn.Module):
         attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
 
         attn_output = self.out_proj(attn_output)
-
+        # print(attn_output)
         return attn_output, None, past_key_value
 
 
@@ -231,64 +227,64 @@ class XformersMemoryXGLMAttention(nn.Module):
         output_attentions: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         """Input shape: Batch x Time x Channel"""
-        with torch.cuda.amp.autocast(dtype=torch.float16):
-            # if key_value_states are provided this layer is used as a cross-attention layer
-            # for the decoder
-            is_cross_attention = key_value_states is not None
+        # if key_value_states are provided this layer is used as a cross-attention layer
+        # for the decoder
+        is_cross_attention = key_value_states is not None
 
-            bsz, tgt_len, _ = hidden_states.size()
+        bsz, tgt_len, _ = hidden_states.size()
 
-            # get query proj
-            query_states = self.q_proj(hidden_states)
-            # get key, value proj
-            # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-            # is checking that the `sequence_length` of the `past_key_value` is the same as
-            # the provided `key_value_states` to support prefix tuning
-            if (
-                is_cross_attention
-                and past_key_value is not None
-                and past_key_value[0].shape[2] == key_value_states.shape[1]
-            ):
-                # reuse k,v, cross_attentions
-                key_states = past_key_value[0]
-                value_states = past_key_value[1]
-            elif is_cross_attention:
-                # cross_attentions
-                key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-                value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-            elif past_key_value is not None:
-                # reuse k, v, self_attention
-                key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-                value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-                key_states = torch.cat([past_key_value[0], key_states], dim=2)
-                value_states = torch.cat([past_key_value[1], value_states], dim=2)
-            else:
-                # self_attention
-                key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-                value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
+        # get query proj
+        query_states = self.q_proj(hidden_states)
+        # get key, value proj
+        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
+        # is checking that the `sequence_length` of the `past_key_value` is the same as
+        # the provided `key_value_states` to support prefix tuning
+        if (
+            is_cross_attention
+            and past_key_value is not None
+            and past_key_value[0].shape[2] == key_value_states.shape[1]
+        ):
+            # reuse k,v, cross_attentions
+            key_states = past_key_value[0]
+            value_states = past_key_value[1]
+        elif is_cross_attention:
+            # cross_attentions
+            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
+            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
+        elif past_key_value is not None:
+            # reuse k, v, self_attention
+            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
+            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
+            key_states = torch.cat([past_key_value[0], key_states], dim=2)
+            value_states = torch.cat([past_key_value[1], value_states], dim=2)
+        else:
+            # self_attention
+            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
+            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
 
-            if self.is_decoder:
-                past_key_value = (key_states, value_states)
+        if self.is_decoder:
+            past_key_value = (key_states, value_states)
 
-            query_states = self._shape(query_states, tgt_len, bsz)
-            key_states = key_states
-            value_states = value_states
+        query_states = self._shape(query_states, tgt_len, bsz)
+        key_states = key_states
+        value_states = value_states
 
-            attn_output = xops.memory_efficient_attention(
-                query_states,
-                key_states,
-                value_states,
-                p=self.dropout if self.training else 0,
-                attn_bias=xops.LowerTriangularMask(),
-            )
-            attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
-            attn_output = attn_output.transpose(1, 2)
+        # attn_output = xops.memory_efficient_attention(
+        #     query_states,
+        #     key_states,
+        #     value_states,
+        #     p=self.dropout if self.training else 0,
+        #     attn_bias=xops.LowerTriangularMask(),
+        # )
 
-            # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-            # partitioned aross GPUs when using tensor-parallelism.
-            attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-            attn_output = self.resid_dropout(self.out_proj(attn_output))
-            return attn_output, None, past_key_value
+        attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
+        attn_output = attn_output.transpose(1, 2)
+
+        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
+        # partitioned aross GPUs when using tensor-parallelism.
+        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
+        attn_output = self.resid_dropout(self.out_proj(attn_output))
+        return attn_output, None, past_key_value
 
 
 class XformersFavorXGLMAttention(nn.Module):
@@ -443,7 +439,7 @@ if __name__ == "__main__":
         model_name,
         load_in_8bit=True,
         device_map="auto",
-        #  torch_dtype=torch.float16
+        # torch_dtype=torch.float16,
     )
     # model.cuda()
     # model.half()
@@ -468,7 +464,7 @@ if __name__ == "__main__":
         )
 
     config = LoraConfig(
-        r=8,
+        r=16,
         lora_alpha=32,
         target_modules=["q_proj", "v_proj"],
         lora_dropout=0.05,
