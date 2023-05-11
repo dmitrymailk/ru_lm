@@ -19,8 +19,8 @@ mkdir -p ./models/$OUTPUT
 #    --data_path self_instruct_translated databricks_dolly_15k_translated_fixed Dahoas/rm-static Dahoas/full-hh-rlhf \
 #    --data_path self_instruct_translated databricks_dolly_15k_translated_fixed self_instruct_en databricks_dolly_15k_fixed_en \
 #    --data_path self_instruct_translated databricks_dolly_15k_translated_fixed self_instruct_en databricks_dolly_15k_fixed_en \
-# single node
-nohup deepspeed main.py \
+# multi node
+deepspeed --hostfile=./myhostfile --include=gpu2.ipavlov.mipt.ru:0,1,2,3@gpu11.ipavlov.mipt.ru main.py  \
    --data_split 1,0,0 \
    --data_path chip2_instruct_alpha_prompt_en chip2_instruct_alpha_prompt_ru dolly_original_prompt dolly_translated_prompt openass_prompt_dataset_en openass_prompt_dataset_ru \
    --model_name_or_path facebook/xglm-7.5B \
@@ -37,4 +37,5 @@ nohup deepspeed main.py \
    --seed 1234 \
    --zero_stage $ZERO_STAGE \
    --deepspeed \
-   --output_dir ./models/$OUTPUT > ./models/$OUTPUT/training.log &
+   --output_dir ./models/$OUTPUT 
+#    > ./models/$OUTPUT/training.log &

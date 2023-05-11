@@ -12,6 +12,10 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 
+import deepspeed
+from transformers import XGLMForCausalLM, XGLMConfig, TrainingArguments
+from transformers.deepspeed import HfDeepSpeedConfig
+
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
@@ -20,6 +24,7 @@ from transformers import (
     default_data_collator,
     get_scheduler,
     DataCollatorWithPadding,
+    XGLMForCausalLM,
 )
 import deepspeed
 from deepspeed.ops.adam import FusedAdam
@@ -322,7 +327,7 @@ def _prepare_decoder_attention_mask(
     return attention_mask
 
 
-class XformersFavorXGLMAttention(nn.Module):
+class XformersMemoryXGLMAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
     def __init__(
@@ -428,13 +433,13 @@ class XformersFavorXGLMAttention(nn.Module):
         key_states = key_states
         value_states = value_states
 
-        # attn_output = xops.memory_efficient_attention(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        #     p=self.dropout if self.training else 0,
-        #     attn_bias=xops.LowerTriangularMask(),
-        # )
+        attn_output = xops.memory_efficient_attention(
+            query_states,
+            key_states,
+            value_states,
+            p=self.dropout if self.training else 0,
+            attn_bias=xops.LowerTriangularMask(),
+        )
 
         # attn_output = self.favor_attn(
         #     query_states,
@@ -444,11 +449,11 @@ class XformersFavorXGLMAttention(nn.Module):
         # attn_output = self.favor_attn(
         #     query_states, key_states, value_states, attention_mask
         # )
-        attn_output = self.favor_attn(
-            query_states,
-            key_states,
-            value_states,
-        )
+        # attn_output = self.favor_attn(
+        #     query_states,
+        #     key_states,
+        #     value_states,
+        # )
         attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
         attn_output = attn_output.transpose(1, 2)
 
@@ -580,9 +585,8 @@ class BetterXGLMAttention(nn.Module):
         return attn_output, None, past_key_value
 
 
-transformers.models.xglm.modeling_xglm.XGLMAttention = BetterXGLMAttention
+# transformers.models.xglm.modeling_xglm.XGLMAttention = BetterXGLMAttention
 # transformers.models.xglm.modeling_xglm.XGLMAttention = XformersMemoryXGLMAttention
-# transformers.models.xglm.modeling_xglm.XGLMAttention = XformersFavorXGLMAttention
 
 
 def main():
@@ -602,18 +606,72 @@ def main():
     args.global_rank = torch.distributed.get_rank()
 
     # возвращает обычный объект с параметрами
-    ds_config = get_train_ds_config(offload=args.offload, stage=args.zero_stage)
-    ds_config["train_micro_batch_size_per_gpu"] = args.per_device_train_batch_size
-    ds_config["train_batch_size"] = (
-        args.per_device_train_batch_size
-        * torch.distributed.get_world_size()
-        * args.gradient_accumulation_steps
-    )
+    # ds_config = get_train_ds_config(offload=args.offload, stage=args.zero_stage)
+    ds_config = {
+        "fp16": {
+            "enabled": True,
+            "loss_scale": 0,
+            "loss_scale_window": 1000,
+            "initial_scale_power": 16,
+            "hysteresis": 2,
+            "min_loss_scale": 1,
+        },
+        "optimizer": {
+            "type": "AdamW",
+            "params": {
+                "lr": 3e-5,
+                "betas": [0.9, 0.95],
+                "eps": 1e-8,
+                "weight_decay": 0.1,
+            },
+        },
+        # "scheduler": {
+        #     "type": "WarmupDecayLR",
+        #     "params": {
+        #         "warmup_min_lr": 0,
+        #         "warmup_max_lr": 3e-5,
+        #         "warmup_num_steps": 2000,
+        #     },
+        # },
+        "zero_optimization": {
+            "stage": 3,
+            "offload_optimizer": {"device": "cpu", "pin_memory": True},
+            "offload_param": {"device": "cpu", "pin_memory": True},
+            "overlap_comm": True,
+            "contiguous_gradients": True,
+            "sub_group_size": 1e9,
+            "reduce_bucket_size": "auto",
+            "stage3_prefetch_bucket_size": "auto",
+            "stage3_param_persistence_threshold": "auto",
+            "stage3_max_live_parameters": 1e9,
+            "stage3_max_reuse_distance": 1e9,
+            "stage3_gather_fp16_weights_on_model_save": True,
+        },
+        # "zero_optimization": {
+        #     "stage": 2,
+        #     "offload_optimizer": {"device": "cpu", "pin_memory": True},
+        #     "allgather_partitions": True,
+        #     "allgather_bucket_size": 2e8,
+        #     "overlap_comm": True,
+        #     "reduce_scatter": True,
+        #     "reduce_bucket_size": 2e8,
+        #     "contiguous_gradients": True,
+        # },
+        "gradient_accumulation_steps": 1,
+        "gradient_clipping": 1.0,
+        "steps_per_print": 10,
+        "train_batch_size": 4,
+        "train_micro_batch_size_per_gpu": 1,
+        "wall_clock_breakdown": False,
+        "wandb": {
+            "enabled": True,
+            "project": "rulm_self_instruct",
+        },
+    }
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
 
-    assert not args.offload, "zero-offload is not currently supported but coming soon!"
     # https://pytorch.org/docs/stable/distributed.html#torch.distributed.barrier
     # синхронизирует все процессы
     torch.distributed.barrier()
@@ -624,31 +682,25 @@ def main():
     )
     tokenizer.pad_token = tokenizer.eos_token
 
-    model_class = AutoModelForCausalLM
-    model = create_hf_model(
-        model_class,
-        args.model_name_or_path,
-        tokenizer,
-        ds_config,
-    )
+    with deepspeed.zero.Init(
+        config_dict_or_path=ds_config,
+    ):
+        model_name = "facebook/xglm-7.5B"
+        # model_config = XGLMConfig.from_pretrained(model_name)
+        training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
+        # model = XGLMForCausalLM(model_config)
+        model = XGLMForCausalLM.from_pretrained(model_name)
     # model = prepare_model_for_int8_training(model)
     # https://pytorch.org/blog/accelerating-large-language-models/#step-3-bonus-faster-matmuls-with-padding
     # не работает с XGLM :(
     # model.resize_token_embeddings(len(tokenizer) // 64 * 65)
-    model = model.half()
+    # model = model.half()
     # for name, param in model.named_parameters():
     #     for num in [31]:
     #         if not str(num) in str(name):
     #             param.requires_grad = False
     # model = BetterTransformer.transform(model)
     # model = torch.compile(model)
-
-    if args.lora_dim > 0:
-        model = convert_linear_layer_to_lora(
-            model, args.lora_module_name, args.lora_dim
-        )
-        if args.only_optimize_lora:
-            model = only_optimize_lora_parameters(model)
 
     # Prepare the data
 
@@ -697,13 +749,13 @@ def main():
         train_dataset,
         collate_fn=collator,
         sampler=train_sampler,
-        batch_size=args.per_device_train_batch_size,
+        batch_size=ds_config["train_micro_batch_size_per_gpu"],
     )
     eval_dataloader = DataLoader(
         eval_dataset,
         collate_fn=collator,
         sampler=eval_sampler,
-        batch_size=args.per_device_eval_batch_size,
+        batch_size=ds_config["train_micro_batch_size_per_gpu"],
     )
 
     def evaluation(model, eval_dataloader):
@@ -729,31 +781,31 @@ def main():
         return perplexity
 
     # Split weights in two groups, one with weight decay and the other not.
-    optimizer_grouped_parameters = get_optimizer_grouped_parameters(
-        model, args.weight_decay
-    )
+    # optimizer_grouped_parameters = get_optimizer_grouped_parameters(
+    #     model, args.weight_decay
+    # )
 
-    AdamOptimizer = FusedAdam
-    optimizer = AdamOptimizer(
-        optimizer_grouped_parameters, lr=args.learning_rate, betas=(0.9, 0.95)
-    )
+    # AdamOptimizer = FusedAdam
+    # optimizer = AdamOptimizer(
+    #     optimizer_grouped_parameters, lr=args.learning_rate, betas=(0.9, 0.95)
+    # )
 
-    num_update_steps_per_epoch = math.ceil(
-        len(train_dataloader) / args.gradient_accumulation_steps
-    )
-    lr_scheduler = get_scheduler(
-        name=args.lr_scheduler_type,
-        optimizer=optimizer,
-        num_warmup_steps=args.num_warmup_steps,
-        num_training_steps=args.num_train_epochs * num_update_steps_per_epoch,
-    )
+    # num_update_steps_per_epoch = math.ceil(
+    #     len(train_dataloader) / args.gradient_accumulation_steps
+    # )
+    # lr_scheduler = get_scheduler(
+    #     name=args.lr_scheduler_type,
+    #     optimizer=optimizer,
+    #     num_warmup_steps=args.num_warmup_steps,
+    #     num_training_steps=args.num_train_epochs * num_update_steps_per_epoch,
+    # )
 
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=model,
-        optimizer=optimizer,
-        args=args,
+        # optimizer=optimizer,
+        # args=args,
         config=ds_config,
-        lr_scheduler=lr_scheduler,
+        # lr_scheduler=lr_scheduler,
         dist_init_required=True,
     )
 
@@ -770,8 +822,10 @@ def main():
     perplexity = evaluation(model, eval_dataloader)
 
     print_rank_0(f"ppl: {perplexity}", args.global_rank)
+
     if args.global_rank == 0:
         wandb.log({"eval_ppl": perplexity})
+    torch.distributed.barrier()
 
     checkpoint_steps = len(train_dataloader) // 5
     print_rank_0("***** Checkpoint save steps *****", checkpoint_steps)
@@ -787,23 +841,23 @@ def main():
             loss = outputs.loss
             model.backward(loss)
             model.step()
-            # if (step + 1) % checkpoint_steps == 0:
-            #     torch.distributed.barrier()
-            #     print_rank_0(
-            #         f"Save model epoch={epoch}_step={step}",
-            #         args.global_rank,
-            #     )
-            #     sub_folder = f"epoch={epoch}_step={step}"
-            #     output_dir = os.path.join(args.output_dir, sub_folder)
-            #     if args.global_rank == 0:
-            #         save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
+            if (step + 1) % checkpoint_steps == 0:
+                torch.distributed.barrier()
+                print_rank_0(
+                    f"Save model epoch={epoch}_step={step}",
+                    args.global_rank,
+                )
+                sub_folder = f"epoch={epoch}_step={step}"
+                output_dir = os.path.join(args.output_dir, sub_folder)
+                if args.global_rank == 0:
+                    save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
 
-            #     if args.zero_stage == 3:
-            #         # For zero stage 3, each gpu only has a part of the model, so we need a special save function
-            #         os.makedirs(output_dir, exist_ok=True)
-            #         save_zero_three_model(
-            #             model, args.global_rank, output_dir, zero_stage=args.zero_stage
-            #         )
+                if args.zero_stage == 3:
+                    # For zero stage 3, each gpu only has a part of the model, so we need a special save function
+                    os.makedirs(output_dir, exist_ok=True)
+                    save_zero_three_model(
+                        model, args.global_rank, output_dir, zero_stage=args.zero_stage
+                    )
 
         torch.distributed.barrier()
         print_rank_0(
