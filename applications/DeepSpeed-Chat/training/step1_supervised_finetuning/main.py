@@ -635,8 +635,8 @@ def main():
         # },
         "zero_optimization": {
             "stage": 3,
-            "offload_optimizer": {"device": "cpu", "pin_memory": True},
-            "offload_param": {"device": "cpu", "pin_memory": True},
+            "offload_optimizer": {"device": "none", "pin_memory": True},
+            "offload_param": {"device": "none", "pin_memory": True},
             "overlap_comm": True,
             "contiguous_gradients": True,
             "sub_group_size": 1e9,
@@ -649,7 +649,7 @@ def main():
         },
         # "zero_optimization": {
         #     "stage": 2,
-        #     "offload_optimizer": {"device": "cpu", "pin_memory": True},
+        #     "offload_optimizer": {"device": "none", "pin_memory": True},
         #     "allgather_partitions": True,
         #     "allgather_bucket_size": 2e8,
         #     "overlap_comm": True,
@@ -660,8 +660,8 @@ def main():
         "gradient_accumulation_steps": 1,
         "gradient_clipping": 1.0,
         "steps_per_print": 10,
-        "train_batch_size": 4,
-        "train_micro_batch_size_per_gpu": 1,
+        "train_batch_size": 16,
+        "train_micro_batch_size_per_gpu": 4,
         "wall_clock_breakdown": False,
         "wandb": {
             "enabled": True,
@@ -689,16 +689,27 @@ def main():
         # model_config = XGLMConfig.from_pretrained(model_name)
         training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
         # model = XGLMForCausalLM(model_config)
-        model = XGLMForCausalLM.from_pretrained(model_name)
+        model = XGLMForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float16,
+        )
+    # model_name = "facebook/xglm-7.5B"
+    # # model_config = XGLMConfig.from_pretrained(model_name)
+    # training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
+    # # model = XGLMForCausalLM(model_config)
+    # model = XGLMForCausalLM.from_pretrained(
+    #     model_name,
+    #     torch_dtype=torch.float16,
+    # )
     # model = prepare_model_for_int8_training(model)
     # https://pytorch.org/blog/accelerating-large-language-models/#step-3-bonus-faster-matmuls-with-padding
     # не работает с XGLM :(
     # model.resize_token_embeddings(len(tokenizer) // 64 * 65)
-    # model = model.half()
-    # for name, param in model.named_parameters():
-    #     for num in [31]:
-    #         if not str(num) in str(name):
-    #             param.requires_grad = False
+    model = model.half()
+    for name, param in model.named_parameters():
+        for num in [31]:
+            if not str(num) in str(name) and "layer" in str(name):
+                param.requires_grad = False
     # model = BetterTransformer.transform(model)
     # model = torch.compile(model)
 
