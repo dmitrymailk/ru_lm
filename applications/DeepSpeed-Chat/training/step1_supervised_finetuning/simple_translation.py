@@ -3,7 +3,6 @@ import torch
 
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import torch
-from easynmt import EasyNMT
 from optimum.bettertransformer import BetterTransformer
 from datasets import load_from_disk, load_dataset
 import os
@@ -23,37 +22,50 @@ class Translator:
 
     def init(self):
         print(f"Init model. {self.device}")
-        if self.model_name in ["facebook/nllb-200-3.3B", "facebook/wmt21-dense-24-wide-en-x",]:
+        if self.model_name in [
+            "facebook/nllb-200-3.3B",
+            "facebook/wmt21-dense-24-wide-en-x",
+        ]:
             # device = int(self.device.split(":")[1])
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 self.model_name,
-                use_auth_token=True,
                 # load_in_8bit=True,
                 # device_map={"": device}
             )
             # self.model = BetterTransformer.transform(self.model)
             self.model = self.model.half()
             self.model = self.model.eval()
-            self.model = torch.compile(self.model, mode="reduce-overhead")
+            self.model = torch.compile(self.model)
             self.model = self.model.to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name,
                 use_auth_token=True,
             )
-        elif self.model_name == "opus-mt":
-            self.model = EasyNMT(self.model_name)
 
         print("Model is initialized.")
 
     def translate(self, text: str):
         func_map = {
             "facebook/nllb-200-3.3B": self.nllb_translate,
-            "opus-mt": self.opusmt_translate,
             "facebook/wmt21-dense-24-wide-en-x": self.wmt21_translate,
         }
-        # with torch.autocast(device_type='cuda', dtype=torch.float16):
+
         with torch.no_grad():
-            return func_map[self.model_name](text)
+            text = self.encode_new_lines(text=text)
+            result = func_map[self.model_name](text)
+            result = self.decode_new_lines(result)
+            return result
+
+    def translate_batch(self, texts: list[str]):
+        func_map = {
+            "facebook/wmt21-dense-24-wide-en-x": self.wmt21_translate_batch,
+        }
+
+        with torch.no_grad():
+            texts = [self.encode_new_lines(text=text) for text in texts]
+            results = func_map[self.model_name](texts)
+            results = [self.decode_new_lines(result) for result in results]
+            return results
 
     def __call__(self, text: str):
         return self.translate(text=text)
@@ -87,17 +99,51 @@ class Translator:
             0
         ]
 
+    def wmt21_translate_batch(self, texts: list[str]):
+        inputs = self.tokenizer(
+            texts,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.max_length,
+            padding="longest",
+        )
+
+        inputs = self.to_device(inputs=inputs)
+        translated_tokens = self.model.generate(
+            **inputs,
+            forced_bos_token_id=self.tokenizer.get_lang_id("ru"),
+            max_new_tokens=self.max_length,
+        )
+        return self.tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
+
     def to_device(self, inputs):
         for key in inputs.keys():
             inputs[key] = inputs[key].to(self.device)
         return inputs
 
+    def encode_new_lines(self, text: str):
+        return text.replace("\n", "_N_")
 
-def translate_dolly():
+    def decode_new_lines(self, text: str):
+        return text.replace("_N_", "\n")
+
+
+def is_code(text):
+    if "):\n" in text:
+        return True
+    if "def " in text:
+        return True
+    if "return " in text:
+        return True
+
+    return False
+
+
+def translate_dolly(device):
     base_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/"
     save_folder = "dolly_translated"
     full_path = f"{base_path}{save_folder}/"
-    file_name = "dolly_translated.json"
+    file_name = "dolly_translated_v2.json"
     assert os.path.isdir(full_path)
 
     data = load_dataset("databricks/databricks-dolly-15k")
@@ -109,16 +155,30 @@ def translate_dolly():
     model_name = "facebook/wmt21-dense-24-wide-en-x"
     translator = Translator(
         model_name=model_name,
-        device="cuda:1",
+        device=device,
     )
 
     translated_examples = []
     for example in tqdm(data):
-        for field in fields:
-            text = example[field]
-            translated = translator(text=text)
-            example[f"{field}_translated"] = translated
-        translated_examples.append(example)
+        texts = [example[field] for field in fields]
+        all_text = " ".join(texts)
+        if not is_code(all_text):
+            # for field in fields:
+            #     text = example[field]
+            #     print(text)
+            #     translated = translator(text=text)
+            #     example[f"{field}_translated"] = translated
+            #     print(translated)
+            #     print("-" * 100)
+            translated_texts = translator.translate_batch(texts=texts)
+            for translated, field, original in zip(translated_texts, fields, texts):
+                print(original)
+                print("===")
+                print(translated)
+                example[f"{field}_translated"] = translated
+            translated_examples.append(example)
+        print("-" * 100)
+        print("-" * 100)
 
     with open(f"{full_path}{file_name}", "w", encoding="utf-8") as outfile:
         json.dump(translated_examples, outfile)
@@ -195,4 +255,5 @@ def translate_chip2():
 if __name__ == "__main__":
     print("Start translation")
     # translate_openass()
-    translate_chip2()
+    # translate_chip2()
+    translate_dolly(device="cuda:0")

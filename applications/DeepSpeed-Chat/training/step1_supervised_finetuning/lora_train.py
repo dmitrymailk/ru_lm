@@ -160,7 +160,6 @@ class BetterXGLMAttention(nn.Module):
             dropout_p=self.dropout if self.training else 0.0,
             # is_causal=True,
         )
-                
 
         if attn_output.size() != (bsz, self.num_heads, tgt_len, self.head_dim):
             raise ValueError(
@@ -432,8 +431,8 @@ if __name__ == "__main__":
     os.environ["WANDB_PROJECT"] = "rulm_self_instruct"
     args = parse_args()
 
-    model_name = "facebook/xglm-7.5B"
-    # model_name = "facebook/xglm-4.5B"
+    # model_name = "facebook/xglm-7.5B"
+    model_name = "facebook/xglm-4.5B"
     # model_name = "facebook/xglm-1.7B"
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -521,6 +520,7 @@ if __name__ == "__main__":
             tf32=True,
             report_to="wandb",
             num_train_epochs=args.num_train_epochs,
+            # max_steps=5000,
         ),
         data_collator=collator,
     )
