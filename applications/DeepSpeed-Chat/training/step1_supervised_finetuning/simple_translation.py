@@ -51,9 +51,7 @@ class Translator:
         }
 
         with torch.no_grad():
-            text = self.encode_new_lines(text=text)
             result = func_map[self.model_name](text)
-            result = self.decode_new_lines(result)
             return result
 
     def translate_batch(self, texts: list[str]):
@@ -62,9 +60,7 @@ class Translator:
         }
 
         with torch.no_grad():
-            texts = [self.encode_new_lines(text=text) for text in texts]
             results = func_map[self.model_name](texts)
-            results = [self.decode_new_lines(result) for result in results]
             return results
 
     def __call__(self, text: str):
@@ -121,12 +117,6 @@ class Translator:
             inputs[key] = inputs[key].to(self.device)
         return inputs
 
-    def encode_new_lines(self, text: str):
-        return text.replace("\n", "_N_")
-
-    def decode_new_lines(self, text: str):
-        return text.replace("_N_", "\n")
-
 
 def is_code(text):
     if "):\n" in text:
@@ -143,7 +133,7 @@ def translate_dolly(device):
     base_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/"
     save_folder = "dolly_translated"
     full_path = f"{base_path}{save_folder}/"
-    file_name = "dolly_translated_v2.json"
+    file_name = "dolly_translated_v3.json"
     assert os.path.isdir(full_path)
 
     data = load_dataset("databricks/databricks-dolly-15k")
@@ -163,19 +153,26 @@ def translate_dolly(device):
         texts = [example[field] for field in fields]
         all_text = " ".join(texts)
         if not is_code(all_text):
-            # for field in fields:
-            #     text = example[field]
-            #     print(text)
-            #     translated = translator(text=text)
-            #     example[f"{field}_translated"] = translated
-            #     print(translated)
-            #     print("-" * 100)
-            translated_texts = translator.translate_batch(texts=texts)
-            for translated, field, original in zip(translated_texts, fields, texts):
-                print(original)
-                print("===")
-                print(translated)
+            for field in fields:
+                text = example[field]
+                print(text)
+                print("-" * 50)
+                texts = text.split("\n")
+                all_translated = []
+                for text in texts:
+                    translated = translator(text=text)
+                    all_translated.append(translated)
+
+                translated = "\n".join(all_translated)
                 example[f"{field}_translated"] = translated
+                print(translated)
+                print("-" * 100)
+            # translated_texts = translator.translate_batch(texts=texts)
+            # for translated, field, original in zip(translated_texts, fields, texts):
+            #     print(original)
+            #     print("===")
+            #     print(translated)
+            #     example[f"{field}_translated"] = translated
             translated_examples.append(example)
         print("-" * 100)
         print("-" * 100)
