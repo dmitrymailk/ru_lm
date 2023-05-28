@@ -20,6 +20,8 @@ from telegram.ext import (
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import pandas as pd
+import torch
+import gc
 
 
 class DialogBotV3:
@@ -65,14 +67,18 @@ class DialogBotV3:
         return answer
 
     def generate_response(self, sample):
-        return self.model.generate(
-            **sample,
-            max_new_tokens=512,
-            penalty_alpha=0.25,
-            top_k=4,
-            repetition_penalty=1.1,
-            # do_sample=True,
-        )
+        with torch.no_grad():
+            result = self.model.generate(
+                **sample,
+                max_new_tokens=512,
+                penalty_alpha=0.25,
+                top_k=4,
+                repetition_penalty=1.1,
+                # do_sample=True,
+            )
+            torch.cuda.empty_cache()
+            gc.collect()
+            return result
 
     def start_chat(self):
         while True:
@@ -101,6 +107,11 @@ class DialogBotV3:
         search_index = g_answer.index(search_str) + len(search_str) + 1
         answer = g_answer[search_index:]
         answer = answer.replace("<|endoftext|>", "")
+        if "Human:" in answer:
+            search_str = "Human:"
+            print(answer)
+            search_index = answer.index(search_str) + len(search_str) + 1
+            answer = answer = answer[:search_index]
         return answer
 
 
@@ -112,8 +123,14 @@ logger = logging.getLogger(__name__)
 
 DIALOG = range(1)
 
-path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v5/"
-model = AutoModelForCausalLM.from_pretrained(path)
+# path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v5/"
+path = "dim/xglm_ru_v5"
+model = AutoModelForCausalLM.from_pretrained(
+    path,
+    # load_in_8bit=True,
+    # device_map="auto",
+    torch_dtype=torch.float16,
+)
 device = "cuda:0"
 model.to(device)
 model.eval()
