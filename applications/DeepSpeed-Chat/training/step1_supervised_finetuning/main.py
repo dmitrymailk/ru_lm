@@ -661,13 +661,14 @@ def main():
         "gradient_clipping": 1.0,
         "steps_per_print": 10,
         "train_batch_size": 16,
-        "train_micro_batch_size_per_gpu": 4,
+        "train_micro_batch_size_per_gpu": 2,
         "wall_clock_breakdown": False,
         "wandb": {
             "enabled": True,
             "project": "rulm_self_instruct",
         },
     }
+    ds_config["train_batch_size"] = ds_config["train_micro_batch_size_per_gpu"] * 4
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
@@ -685,10 +686,9 @@ def main():
     with deepspeed.zero.Init(
         config_dict_or_path=ds_config,
     ):
-        model_name = "facebook/xglm-7.5B"
-        # model_config = XGLMConfig.from_pretrained(model_name)
+        # model_name = "facebook/xglm-7.5B"
+        model_name = "facebook/xglm-4.5B"
         training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
-        # model = XGLMForCausalLM(model_config)
         model = XGLMForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,
@@ -705,11 +705,11 @@ def main():
     # https://pytorch.org/blog/accelerating-large-language-models/#step-3-bonus-faster-matmuls-with-padding
     # не работает с XGLM :(
     # model.resize_token_embeddings(len(tokenizer) // 64 * 65)
-    model = model.half()
-    for name, param in model.named_parameters():
-        for num in [31]:
-            if not str(num) in str(name) and "layer" in str(name):
-                param.requires_grad = False
+    # model = model.half()
+    # for name, param in model.named_parameters():
+    #     for num in [31]:
+    #         if not str(num) in str(name) and "layer" in str(name):
+    #             param.requires_grad = False
     # model = BetterTransformer.transform(model)
     # model = torch.compile(model)
 
@@ -852,23 +852,23 @@ def main():
             loss = outputs.loss
             model.backward(loss)
             model.step()
-            if (step + 1) % checkpoint_steps == 0:
-                torch.distributed.barrier()
-                print_rank_0(
-                    f"Save model epoch={epoch}_step={step}",
-                    args.global_rank,
-                )
-                sub_folder = f"epoch={epoch}_step={step}"
-                output_dir = os.path.join(args.output_dir, sub_folder)
-                if args.global_rank == 0:
-                    save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
+            # if (step + 1) % checkpoint_steps == 0:
+            #     torch.distributed.barrier()
+            #     print_rank_0(
+            #         f"Save model epoch={epoch}_step={step}",
+            #         args.global_rank,
+            #     )
+            #     sub_folder = f"epoch={epoch}_step={step}"
+            #     output_dir = os.path.join(args.output_dir, sub_folder)
+            #     if args.global_rank == 0:
+            #         save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
 
-                if args.zero_stage == 3:
-                    # For zero stage 3, each gpu only has a part of the model, so we need a special save function
-                    os.makedirs(output_dir, exist_ok=True)
-                    save_zero_three_model(
-                        model, args.global_rank, output_dir, zero_stage=args.zero_stage
-                    )
+            #     if args.zero_stage == 3:
+            #         # For zero stage 3, each gpu only has a part of the model, so we need a special save function
+            #         os.makedirs(output_dir, exist_ok=True)
+            #         save_zero_three_model(
+            #             model, args.global_rank, output_dir, zero_stage=args.zero_stage
+            #         )
 
         torch.distributed.barrier()
         print_rank_0(
