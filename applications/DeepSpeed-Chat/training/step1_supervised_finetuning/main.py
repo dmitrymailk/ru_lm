@@ -622,7 +622,7 @@ def main():
                 "lr": 3e-5,
                 "betas": [0.9, 0.95],
                 "eps": 1e-8,
-                "weight_decay": 0.1,
+                "weight_decay": 0.0,
             },
         },
         # "scheduler": {
@@ -657,18 +657,22 @@ def main():
         #     "reduce_bucket_size": 2e8,
         #     "contiguous_gradients": True,
         # },
-        "gradient_accumulation_steps": 1,
+        "gradient_accumulation_steps": 8,
         "gradient_clipping": 1.0,
-        "steps_per_print": 10,
+        "steps_per_print": 100,
         "train_batch_size": 16,
-        "train_micro_batch_size_per_gpu": 2,
+        "train_micro_batch_size_per_gpu": 1,
         "wall_clock_breakdown": False,
         "wandb": {
             "enabled": True,
             "project": "rulm_self_instruct",
         },
     }
-    ds_config["train_batch_size"] = ds_config["train_micro_batch_size_per_gpu"] * 4
+    ds_config["train_batch_size"] = (
+        ds_config["train_micro_batch_size_per_gpu"]
+        * 4
+        * ds_config["gradient_accumulation_steps"]
+    )
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
@@ -852,23 +856,23 @@ def main():
             loss = outputs.loss
             model.backward(loss)
             model.step()
-            # if (step + 1) % checkpoint_steps == 0:
-            #     torch.distributed.barrier()
-            #     print_rank_0(
-            #         f"Save model epoch={epoch}_step={step}",
-            #         args.global_rank,
-            #     )
-            #     sub_folder = f"epoch={epoch}_step={step}"
-            #     output_dir = os.path.join(args.output_dir, sub_folder)
-            #     if args.global_rank == 0:
-            #         save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
+            if (step + 1) % checkpoint_steps == 0:
+                torch.distributed.barrier()
+                print_rank_0(
+                    f"Save model epoch={epoch}_step={step}",
+                    args.global_rank,
+                )
+                sub_folder = f"epoch={epoch}_step={step}"
+                output_dir = os.path.join(args.output_dir, sub_folder)
+                if args.global_rank == 0:
+                    save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
 
-            #     if args.zero_stage == 3:
-            #         # For zero stage 3, each gpu only has a part of the model, so we need a special save function
-            #         os.makedirs(output_dir, exist_ok=True)
-            #         save_zero_three_model(
-            #             model, args.global_rank, output_dir, zero_stage=args.zero_stage
-            #         )
+                if args.zero_stage == 3:
+                    # For zero stage 3, each gpu only has a part of the model, so we need a special save function
+                    os.makedirs(output_dir, exist_ok=True)
+                    save_zero_three_model(
+                        model, args.global_rank, output_dir, zero_stage=args.zero_stage
+                    )
 
         torch.distributed.barrier()
         print_rank_0(
