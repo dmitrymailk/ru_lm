@@ -464,34 +464,42 @@ def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=512):
     }
 
 
+def add_special_tokens(string):
+    string = string.replace("\n", "<new_line_token>")
+    string = string.replace("\t", "<tab_token>")
+    string = string.replace("  ", "<space_token><space_token>")
+    return string
+
+
+def remove_special_tokens(string):
+    string = string.replace("<new_line_token>", "\n")
+    string = string.replace("<tab_token>", "\t")
+    string = string.replace("<space_token><space_token>", "  ")
+    return string
+
+
+def encode(
+    text: str,
+    tokenizer,
+    special_tokens=True,
+):
+    text = add_special_tokens(text)
+    text = tokenizer.encode(text, add_special_tokens=special_tokens)
+    return text
+
+
+def decode(tokens: list[int], tokenizer):
+    tokens = tokenizer.decode(tokens)
+    tokens = remove_special_tokens(tokens)
+    return tokens
+
+
 def mask_human_prompt(input_text, tokenizer, mask_index=-100):
     # print(input_text)
 
-    def add_special_tokens(string):
-        string = string.replace("\n", "<new_line_token>")
-        string = string.replace("\t", "<tab_token>")
-        string = string.replace("  ", "<space_token><space_token>")
-        return string
-
-    def remove_special_tokens(string):
-        string = string.replace("<new_line_token>", "\n")
-        string = string.replace("<tab_token>", "\t")
-        string = string.replace("<space_token><space_token>", "  ")
-        return string
-
-    def encode(text: str, special_tokens=True):
-        text = add_special_tokens(text)
-        text = tokenizer.encode(text, add_special_tokens=special_tokens)
-        return text
-
-    def decode(tokens: list[int]):
-        tokens = tokenizer.decode(tokens)
-        tokens = remove_special_tokens(tokens)
-        return tokens
-
     groups = []
     human_regex = re.finditer(r"\nHuman:", input_text)
-    assistant_regex = re.finditer(r"\nAssistant:", input_text)
+    assistant_regex = re.finditer(r"Assistant:", input_text)
     for human_label, assistant_label in zip(human_regex, assistant_regex):
         span_start = human_label.span()
         span_end = assistant_label.span()
@@ -515,13 +523,13 @@ def mask_human_prompt(input_text, tokenizer, mask_index=-100):
         if i % 2 == 0:
             tokens = groups[group_index]
             # tokens = encode_decode(tokens, special_tokens=use_special_tokens)
-            tokens = encode(tokens, special_tokens=use_special_tokens)
+            tokens = encode(tokens, tokenizer, special_tokens=use_special_tokens)
             tokens = [mask_index for _ in range(len(tokens))]
             original_text.extend(tokens)
             group_index += 1
         else:
             tokens = new_text[splitted_index]
-            tokens = encode(tokens, special_tokens=use_special_tokens)
+            tokens = encode(tokens, tokenizer, special_tokens=use_special_tokens)
             original_text.extend(tokens)
             splitted_index += 1
 
@@ -541,6 +549,7 @@ def prepare_dataset_v2(
     formated_prompt = prompt_func(example)
     # print(formated_prompt)
     # formated_prompt += end_of_conversation_token
+    formated_prompt = add_special_tokens(formated_prompt)
     chosen_token = tokenizer(
         formated_prompt,
         max_length=max_seq_len,
@@ -553,6 +562,7 @@ def prepare_dataset_v2(
         input_text=formated_prompt,
         tokenizer=tokenizer,
     )
+
     return {
         "input_ids": chosen_token["input_ids"],
         "attention_mask": chosen_token["attention_mask"],
