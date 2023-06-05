@@ -25,6 +25,7 @@ from transformers import (
     get_scheduler,
     DataCollatorWithPadding,
     XGLMForCausalLM,
+    DataCollatorForSeq2Seq,
 )
 import deepspeed
 from deepspeed.ops.adam import FusedAdam
@@ -316,15 +317,6 @@ def flash_forward(
             h=nheads,
         )
     return self.out_proj(rearrange(output, "b s h d -> b s (h d)")), None, None
-
-
-# Disable the transformation of the attention mask in LlamaModel as the flash attention
-# requires the attention mask to be the same as the key_padding_mask
-def _prepare_decoder_attention_mask(
-    self, attention_mask, input_shape, inputs_embeds, past_key_values_length
-):
-    # [bsz, seq_len]
-    return attention_mask
 
 
 class XformersMemoryXGLMAttention(nn.Module):
@@ -738,19 +730,22 @@ def main():
         output_path="./datasets/",
         seed=args.seed,
     )
-    data_collator_pad = DataCollatorWithPadding(
+    data_collator_pad = DataCollatorForSeq2Seq(
         tokenizer=tokenizer,
+        padding=True,
+        max_length=2048,
     )
 
     def collator(x):
-        features_map = {key: [] for key in x[0].keys()}
-        for item in x:
-            for key in item.keys():
-                features_map[key].append(item[key])
+        # features_map = {key: [] for key in x[0].keys()}
+        # for item in x:
+        #     for key in item.keys():
+        #         features_map[key].append(item[key])
 
-        del features_map["labels"]
-        features_map = data_collator_pad(features_map)
-        features_map["labels"] = features_map["input_ids"]
+        # del features_map["labels"]
+        # features_map = data_collator_pad(features_map)
+        # features_map["labels"] = features_map["input_ids"]
+        features_map = data_collator_pad(x)
         return features_map
 
     # DataLoaders creation:

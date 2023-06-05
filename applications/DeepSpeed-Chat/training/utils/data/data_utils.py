@@ -16,6 +16,7 @@ from itertools import chain
 from . import raw_datasets
 from datasets import concatenate_datasets, load_from_disk
 import hashlib
+import re
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
@@ -463,6 +464,98 @@ def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=512):
     }
 
 
+def mask_human_prompt(input_text, tokenizer, mask_index=-100):
+    def add_special_tokens(string):
+        string = string.replace("\n", "<new_line_token>")
+        string = string.replace("\t", "<tab_token>")
+        string = string.replace("  ", "<space_token><space_token>")
+        return string
+
+    def remove_special_tokens(string):
+        string = string.replace("<new_line_token>", "\n")
+        string = string.replace("<tab_token>", "\t")
+        string = string.replace("<space_token><space_token>", "  ")
+        return string
+
+    def encode(text: str, special_tokens=True):
+        text = add_special_tokens(text)
+        text = tokenizer.encode(text, add_special_tokens=special_tokens)
+        return text
+
+    def decode(tokens: list[int]):
+        tokens = tokenizer.decode(tokens)
+        tokens = remove_special_tokens(tokens)
+        return tokens
+
+    search_regex = r"\n{0,}Human:\s*.*((\n*)|.*)*Assistant:"
+    groups = []
+    for regex in re.finditer(
+        search_regex,
+        input_text,
+    ):
+        groups.append(regex.group())
+
+    new_text = input_text
+    special_token = "<my_special_replace_token>"
+    for span in groups:
+        new_text = new_text.replace(span, special_token)
+
+    new_text = new_text.split(special_token)
+    new_text.pop(0)
+
+    original_text = []
+    group_index = 0
+    splitted_index = 0
+    use_special_tokens = True
+
+    for i in range(len(new_text) + len(groups)):
+        if i % 2 == 0:
+            tokens = groups[group_index]
+            # tokens = encode_decode(tokens, special_tokens=use_special_tokens)
+            tokens = encode(tokens, special_tokens=use_special_tokens)
+            tokens = [mask_index for _ in range(len(tokens))]
+            original_text.extend(tokens)
+            group_index += 1
+        else:
+            tokens = new_text[splitted_index]
+            tokens = encode(tokens, special_tokens=use_special_tokens)
+            original_text.extend(tokens)
+            splitted_index += 1
+
+        if use_special_tokens:
+            use_special_tokens = False
+
+    return original_text
+
+
+def prepare_dataset_v2(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    # print(example)
+    formated_prompt = prompt_func(example)
+    # formated_prompt += end_of_conversation_token
+    chosen_token = tokenizer(
+        formated_prompt,
+        max_length=max_seq_len,
+        # padding="max_length",
+        # padding=False,
+        truncation=True,
+        # return_tensors="pt",
+    )
+    masked_prompt = mask_human_prompt(
+        input_text=formated_prompt,
+        tokenizer=tokenizer,
+    )
+    return {
+        "input_ids": chosen_token["input_ids"],
+        "attention_mask": chosen_token["attention_mask"],
+        "labels": masked_prompt,
+    }
+
+
 def create_prompt_dataset_v2(
     datasets_names: list = None,
     tokenizer=None,
@@ -505,8 +598,8 @@ def create_prompt_dataset_v2(
             for stage in ["train", "test"]:
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
-                        lambda x: prepare_dataset(
-                            prompt_func=dataset.get_prompt_and_chosen,
+                        lambda x: prepare_dataset_v2(
+                            prompt_func=dataset.get_prompt,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
@@ -519,8 +612,8 @@ def create_prompt_dataset_v2(
                     train_datasets.append(train_data)
                 else:
                     eval_data = dataset.get_eval_data().map(
-                        lambda x: prepare_dataset(
-                            prompt_func=dataset.get_prompt_and_chosen,
+                        lambda x: prepare_dataset_v2(
+                            prompt_func=dataset.get_prompt,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
