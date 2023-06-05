@@ -465,6 +465,8 @@ def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=512):
 
 
 def mask_human_prompt(input_text, tokenizer, mask_index=-100):
+    # print(input_text)
+
     def add_special_tokens(string):
         string = string.replace("\n", "<new_line_token>")
         string = string.replace("\t", "<tab_token>")
@@ -487,13 +489,14 @@ def mask_human_prompt(input_text, tokenizer, mask_index=-100):
         tokens = remove_special_tokens(tokens)
         return tokens
 
-    search_regex = r"\n{0,}Human:\s*.*((\n*)|.*)*Assistant:"
     groups = []
-    for regex in re.finditer(
-        search_regex,
-        input_text,
-    ):
-        groups.append(regex.group())
+    human_regex = re.finditer(r"\nHuman:", input_text)
+    assistant_regex = re.finditer(r"\nAssistant:", input_text)
+    for human_label, assistant_label in zip(human_regex, assistant_regex):
+        span_start = human_label.span()
+        span_end = assistant_label.span()
+        group = input_text[span_start[0] : span_end[1]]
+        groups.append(group)
 
     new_text = input_text
     special_token = "<my_special_replace_token>"
@@ -536,6 +539,7 @@ def prepare_dataset_v2(
 ):
     # print(example)
     formated_prompt = prompt_func(example)
+    # print(formated_prompt)
     # formated_prompt += end_of_conversation_token
     chosen_token = tokenizer(
         formated_prompt,
@@ -552,7 +556,8 @@ def prepare_dataset_v2(
     return {
         "input_ids": chosen_token["input_ids"],
         "attention_mask": chosen_token["attention_mask"],
-        "labels": [masked_prompt],
+        "labels": masked_prompt,
+        # "labels": chosen_token["input_ids"],
     }
 
 
