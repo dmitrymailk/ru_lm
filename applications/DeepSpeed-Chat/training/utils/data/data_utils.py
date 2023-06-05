@@ -48,11 +48,11 @@ def get_raw_dataset(dataset_name, output_path, seed, local_rank):
         return raw_datasets.EnDollyInstructTranslatedV2(output_path, seed, local_rank)
     elif dataset_name == "dolly_translated_prompt":
         return raw_datasets.RuDollyInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_translated_prompt_v2":
+    elif dataset_name == "dolly_translated_prompt_v2_clean_v1":
         return raw_datasets.RuDollyInstructTranslatedV2(output_path, seed, local_rank)
     elif dataset_name == "chip2_instruct_alpha_prompt_ru":
         return raw_datasets.RuChip2Translated(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_ru_v2":
+    elif dataset_name == "chip2_instruct_alpha_prompt_ru_v2_clean_v1":
         return raw_datasets.RuChip2TranslatedV2(output_path, seed, local_rank)
     elif dataset_name == "chip2_instruct_alpha_prompt_en":
         return raw_datasets.EnChip2Translated(output_path, seed, local_rank)
@@ -60,11 +60,11 @@ def get_raw_dataset(dataset_name, output_path, seed, local_rank):
         return raw_datasets.EnChip2TranslatedV2(output_path, seed, local_rank)
     elif dataset_name == "openass_prompt_dataset_ru":
         return raw_datasets.RuOpenAssTranslated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_ru_v2":
+    elif dataset_name == "openass_prompt_dataset_ru_v2_clean_v1":
         return raw_datasets.RuOpenAssTranslatedV2(output_path, seed, local_rank)
     elif dataset_name == "openass_prompt_dataset_en":
         return raw_datasets.EnOpenAssTranslated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_en_v2":
+    elif dataset_name == "openass_prompt_dataset_en_v2_clean_v1":
         return raw_datasets.EnOpenAssTranslatedV2(output_path, seed, local_rank)
     else:
         raise RuntimeError(
@@ -552,7 +552,7 @@ def prepare_dataset_v2(
     return {
         "input_ids": chosen_token["input_ids"],
         "attention_mask": chosen_token["attention_mask"],
-        "labels": masked_prompt,
+        "labels": [masked_prompt],
     }
 
 
@@ -599,7 +599,7 @@ def create_prompt_dataset_v2(
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
                         lambda x: prepare_dataset_v2(
-                            prompt_func=dataset.get_prompt,
+                            prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
@@ -613,7 +613,7 @@ def create_prompt_dataset_v2(
                 else:
                     eval_data = dataset.get_eval_data().map(
                         lambda x: prepare_dataset_v2(
-                            prompt_func=dataset.get_prompt,
+                            prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
