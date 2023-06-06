@@ -498,7 +498,7 @@ def mask_human_prompt(input_text, tokenizer, mask_index=-100):
     # print(input_text)
 
     groups = []
-    human_regex = re.finditer(r"\nHuman:", input_text)
+    human_regex = re.finditer(r"Human:", input_text)
     assistant_regex = re.finditer(r"Assistant:", input_text)
     for human_label, assistant_label in zip(human_regex, assistant_regex):
         span_start = human_label.span()
@@ -566,7 +566,7 @@ def prepare_dataset_v2(
     return {
         "input_ids": chosen_token["input_ids"],
         "attention_mask": chosen_token["attention_mask"],
-        "labels": masked_prompt,
+        "labels": [masked_prompt],
         # "labels": chosen_token["input_ids"],
     }
 

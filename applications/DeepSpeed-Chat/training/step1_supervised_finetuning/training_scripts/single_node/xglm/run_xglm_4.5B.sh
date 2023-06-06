@@ -22,7 +22,7 @@ mkdir -p ./models/$OUTPUT
 nohup deepspeed main.py \
    --data_split 1,0,0 \
    --data_path chip2_instruct_alpha_prompt_en_v2 chip2_instruct_alpha_prompt_ru_v2_clean_v1 dolly_original_prompt_v2 dolly_translated_prompt_v2_clean_v1 openass_prompt_dataset_en_v2_clean_v1 openass_prompt_dataset_ru_v2_clean_v1 \
-   --model_name_or_path facebook/xglm-4.5B \
+   --model_name_or_path facebook/xglm-1.7B \
    --per_device_train_batch_size 4 \
    --per_device_eval_batch_size 4 \
    --max_seq_len 2048 \

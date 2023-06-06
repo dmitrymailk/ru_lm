@@ -662,7 +662,7 @@ def main():
     }
     ds_config["train_batch_size"] = (
         ds_config["train_micro_batch_size_per_gpu"]
-        * 4
+        * torch.cuda.device_count()
         * ds_config["gradient_accumulation_steps"]
     )
 
@@ -674,7 +674,9 @@ def main():
     torch.distributed.barrier()
 
     tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name_or_path,
+        # args.model_name_or_path,
+        # "./models/tokenizers/xglm_4.5B_fix_v1",
+        "./models/tokenizers/xglm_1.7B_fix_v1",
         fast_tokenizer=True,
     )
     tokenizer.pad_token = tokenizer.eos_token
@@ -683,12 +685,15 @@ def main():
         config_dict_or_path=ds_config,
     ):
         # model_name = "facebook/xglm-7.5B"
-        model_name = "facebook/xglm-4.5B"
+        # model_name = "facebook/xglm-4.5B"
+        model_name = "facebook/xglm-1.7B"
         training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
         model = XGLMForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,
         )
+
+    model.resize_token_embeddings(len(tokenizer))
     # model_name = "facebook/xglm-7.5B"
     # # model_config = XGLMConfig.from_pretrained(model_name)
     # training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
@@ -745,6 +750,7 @@ def main():
         # del features_map["labels"]
         # features_map = data_collator_pad(features_map)
         # features_map["labels"] = features_map["input_ids"]
+        # print(x)
         features_map = data_collator_pad(x)
         return features_map
 
