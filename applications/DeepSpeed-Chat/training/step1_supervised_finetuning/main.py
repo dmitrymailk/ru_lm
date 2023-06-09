@@ -86,15 +86,6 @@ def parse_args():
         "form: dataset1-path dataset2-path ...",
     )
     parser.add_argument(
-        "--data_split",
-        type=str,
-        default="6,2,2",
-        help="Comma-separated list of proportions for training"
-        "phase 1, 2, and 3 data. For example the split `2,4,4`"
-        "will use 60% of data for phase 1, 20% for phase 2"
-        "and 20% for phase 3.",
-    )
-    parser.add_argument(
         "--sft_only_data_path",
         nargs="*",
         default=[],
@@ -110,6 +101,12 @@ def parse_args():
         "--model_name_or_path",
         type=str,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
+        required=True,
+    )
+    parser.add_argument(
+        "--tokenizer_path",
+        type=str,
+        help="Tokenizer path",
         required=True,
     )
     parser.add_argument(
@@ -228,377 +225,18 @@ def parse_args():
     return args
 
 
-# для того чтобы это заработало нужно открыть исходники и закоментировать все упоминания
-# TORCH_CHECK из сурсов, а затем скомпилировать это
-# искать в файле csrc/flash_attn/fmha_api.cpp
-def flash_forward(
-    self,
-    hidden_states: torch.Tensor,
-    attention_mask: Optional[torch.Tensor] = None,
-    position_ids: Optional[torch.Tensor] = None,
-    past_key_value: Optional[Tuple[torch.Tensor]] = None,
-    output_attentions: bool = False,
-    use_cache: bool = False,
-    **other_keys,
-) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-    """Input shape: Batch x Time x Channel
-
-    attention_mask: [bsz, q_len]
-    """
-    bsz, q_len, _ = hidden_states.size()
-
-    query_states = (
-        self.q_proj(hidden_states)
-        .view(bsz, q_len, self.num_heads, self.head_dim)
-        .transpose(1, 2)
-    )
-    key_states = (
-        self.k_proj(hidden_states)
-        .view(bsz, q_len, self.num_heads, self.head_dim)
-        .transpose(1, 2)
-    )
-    value_states = (
-        self.v_proj(hidden_states)
-        .view(bsz, q_len, self.num_heads, self.head_dim)
-        .transpose(1, 2)
-    )
-    assert past_key_value is None, "past_key_value is not supported"
-    assert not output_attentions, "output_attentions is not supported"
-    assert not use_cache, "use_cache is not supported"
-
-    # Flash attention codes from
-    # https://github.com/HazyResearch/flash-attention/blob/main/flash_attn/flash_attention.py
-
-    # transform the data into the format required by flash attention
-    qkv = torch.stack(
-        [query_states, key_states, value_states], dim=2
-    )  # [bsz, nh, 3, q_len, hd]
-    qkv = qkv.transpose(1, 3)  # [bsz, q_len, 3, nh, hd]
-    # We have disabled _prepare_decoder_attention_mask in LlamaModel
-    # the attention_mask should be the same as the key_padding_mask
-    key_padding_mask = attention_mask
-
-    if key_padding_mask is None:
-        qkv = rearrange(qkv, "b s ... -> (b s) ...")
-        max_s = q_len
-        cu_q_lens = torch.arange(
-            0, (bsz + 1) * q_len, step=q_len, dtype=torch.int32, device=qkv.device
-        )
-        output = flash_attn_unpadded_qkvpacked_func(
-            qkv, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
-        )
-        output = rearrange(output, "(b s) ... -> b s ...", b=bsz)
-    else:
-        nheads = qkv.shape[-2]
-        x = rearrange(qkv, "b s three h d -> b s (three h d)")
-        x_unpad, indices, cu_q_lens, max_s = unpad_input(x, key_padding_mask)
-        x_unpad = rearrange(
-            x_unpad,
-            "nnz (three h d) -> nnz three h d",
-            three=3,
-            h=nheads,
-        )
-        output_unpad = flash_attn_unpadded_qkvpacked_func(
-            x_unpad,
-            cu_q_lens,
-            max_s,
-            0.0,
-            softmax_scale=None,
-            causal=True,
-        )
-        output = rearrange(
-            pad_input(
-                rearrange(output_unpad, "nnz h d -> nnz (h d)"),
-                indices,
-                bsz,
-                q_len,
-            ),
-            "b s (h d) -> b s h d",
-            h=nheads,
-        )
-    return self.out_proj(rearrange(output, "b s h d -> b s (h d)")), None, None
-
-
-class XformersMemoryXGLMAttention(nn.Module):
-    """Multi-headed attention from 'Attention Is All You Need' paper"""
-
-    def __init__(
-        self,
-        embed_dim: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        is_decoder: bool = False,
-        bias: bool = True,
-    ):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.head_dim = embed_dim // num_heads
-
-        if (self.head_dim * num_heads) != self.embed_dim:
-            raise ValueError(
-                f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
-                f" and `num_heads`: {num_heads})."
-            )
-        self.scaling = self.head_dim**-0.5
-        self.is_decoder = is_decoder
-        self.resid_dropout = nn.Dropout(self.dropout)
-
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-
-        # self.favor_attn = FavorAttention(
-        #     causal=True,
-        #     dropout=0.01,
-        #     dim_head=self.head_dim,
-        #     feature_map_type=FeatureMapType.SMOrf,
-        # )
-        # self.favor_attn = RandomAttention(
-        #     # causal=True,
-        #     dropout=0.01,
-        # )
-        self.favor_attn = LinformerAttention(
-            dropout=0.01,
-            seq_len=embed_dim,
-        )
-
-    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
-        return (
-            tensor.view(bsz, seq_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        layer_head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        """Input shape: Batch x Time x Channel"""
-
-        # if key_value_states are provided this layer is used as a cross-attention layer
-        # for the decoder
-        is_cross_attention = key_value_states is not None
-
-        bsz, tgt_len, _ = hidden_states.size()
-
-        # get query proj
-        query_states = self.q_proj(hidden_states)
-        # get key, value proj
-        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-        # is checking that the `sequence_length` of the `past_key_value` is the same as
-        # the provided `key_value_states` to support prefix tuning
-        if (
-            is_cross_attention
-            and past_key_value is not None
-            and past_key_value[0].shape[2] == key_value_states.shape[1]
-        ):
-            # reuse k,v, cross_attentions
-            key_states = past_key_value[0]
-            value_states = past_key_value[1]
-        elif is_cross_attention:
-            # cross_attentions
-            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-        elif past_key_value is not None:
-            # reuse k, v, self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-            key_states = torch.cat([past_key_value[0], key_states], dim=2)
-            value_states = torch.cat([past_key_value[1], value_states], dim=2)
-        else:
-            # self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-
-        if self.is_decoder:
-            past_key_value = (key_states, value_states)
-
-        query_states = self._shape(query_states, tgt_len, bsz)
-        key_states = key_states
-        value_states = value_states
-
-        attn_output = xops.memory_efficient_attention(
-            query_states,
-            key_states,
-            value_states,
-            p=self.dropout if self.training else 0,
-            attn_bias=xops.LowerTriangularMask(),
-        )
-
-        # attn_output = self.favor_attn(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        # )
-        # attn_output = self.favor_attn(
-        #     query_states, key_states, value_states, attention_mask
-        # )
-        # attn_output = self.favor_attn(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        # )
-        attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
-        attn_output = attn_output.transpose(1, 2)
-
-        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-        # partitioned aross GPUs when using tensor-parallelism.
-        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-        attn_output = self.resid_dropout(self.out_proj(attn_output))
-        return attn_output, None, past_key_value
-
-
-class BetterXGLMAttention(nn.Module):
-    """Multi-headed attention from 'Attention Is All You Need' paper"""
-
-    def __init__(
-        self,
-        embed_dim: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        is_decoder: bool = False,
-        bias: bool = True,
-    ):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.head_dim = embed_dim // num_heads
-
-        if (self.head_dim * num_heads) != self.embed_dim:
-            raise ValueError(
-                f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
-                f" and `num_heads`: {num_heads})."
-            )
-        self.scaling = self.head_dim**-0.5
-        self.is_decoder = is_decoder
-        self.resid_dropout = nn.Dropout(self.dropout)
-
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-
-    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
-        return (
-            tensor.view(bsz, seq_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        layer_head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        """Input shape: Batch x Time x Channel"""
-
-        # if key_value_states are provided this layer is used as a cross-attention layer
-        # for the decoder
-        is_cross_attention = key_value_states is not None
-
-        bsz, tgt_len, _ = hidden_states.size()
-
-        # get query proj
-        query_states = self.q_proj(hidden_states)
-        # get key, value proj
-        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-        # is checking that the `sequence_length` of the `past_key_value` is the same as
-        # the provided `key_value_states` to support prefix tuning
-        if (
-            is_cross_attention
-            and past_key_value is not None
-            and past_key_value[0].shape[2] == key_value_states.shape[1]
-        ):
-            # reuse k,v, cross_attentions
-            key_states = past_key_value[0]
-            value_states = past_key_value[1]
-        elif is_cross_attention:
-            # cross_attentions
-            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-        elif past_key_value is not None:
-            # reuse k, v, self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-            key_states = torch.cat([past_key_value[0], key_states], dim=2)
-            value_states = torch.cat([past_key_value[1], value_states], dim=2)
-        else:
-            # self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-
-        if self.is_decoder:
-            past_key_value = (key_states, value_states)
-
-        query_states = self._shape(query_states, tgt_len, bsz)
-        key_states = key_states
-        value_states = value_states
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=True,
-            enable_math=True,
-            enable_mem_efficient=False,
-        ):
-            attn_output = torch.nn.functional.scaled_dot_product_attention(
-                query_states,
-                key_states,
-                value_states,
-                attn_mask=attention_mask,
-                dropout_p=self.dropout if self.training else 0.0,
-                is_causal=False,
-            )
-
-        if attn_output.size() != (bsz, self.num_heads, tgt_len, self.head_dim):
-            raise ValueError(
-                f"`attn_output` should be of size {(bsz, self.num_heads, tgt_len, self.head_dim)}, but is"
-                f" {attn_output.size()}"
-            )
-
-        attn_output = attn_output.transpose(1, 2)
-
-        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-        # partitioned aross GPUs when using tensor-parallelism.
-        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-
-        attn_output = self.out_proj(attn_output)
-
-        return attn_output, None, past_key_value
-
-
-# transformers.models.xglm.modeling_xglm.XGLMAttention = BetterXGLMAttention
-# transformers.models.xglm.modeling_xglm.XGLMAttention = XformersMemoryXGLMAttention
-
-
 def main():
     args = parse_args()
 
     if args.local_rank == -1:
         device = torch.device("cuda")
     else:
-        # устанавливаем текущий девайс, наверное это сделано глобально
-        # альтернатива torch.cuda.device(device)
         torch.cuda.set_device(args.local_rank)
         device = torch.device("cuda", args.local_rank)
-        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        # torch.distributed.init_process_group(backend='nccl')
         deepspeed.init_distributed()
 
     args.global_rank = torch.distributed.get_rank()
 
-    # возвращает обычный объект с параметрами
-    # ds_config = get_train_ds_config(offload=args.offload, stage=args.zero_stage)
     ds_config = {
         "fp16": {
             "enabled": True,
@@ -674,9 +312,9 @@ def main():
     torch.distributed.barrier()
 
     tokenizer = AutoTokenizer.from_pretrained(
-        # args.model_name_or_path,
+        args.tokenizer_path,
         # "./models/tokenizers/xglm_4.5B_fix_v1",
-        "./models/tokenizers/xglm_1.7B_fix_v1",
+        # "./models/tokenizers/xglm_1.7B_fix_v1",
         fast_tokenizer=True,
     )
     tokenizer.pad_token = tokenizer.eos_token
@@ -686,35 +324,14 @@ def main():
     ):
         # model_name = "facebook/xglm-7.5B"
         # model_name = "facebook/xglm-4.5B"
-        model_name = "facebook/xglm-1.7B"
+        # model_name = "facebook/xglm-1.7B"
         training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
         model = XGLMForCausalLM.from_pretrained(
-            model_name,
+            args.model_name_or_path,
             torch_dtype=torch.float16,
         )
 
     model.resize_token_embeddings(len(tokenizer))
-    # model_name = "facebook/xglm-7.5B"
-    # # model_config = XGLMConfig.from_pretrained(model_name)
-    # training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
-    # # model = XGLMForCausalLM(model_config)
-    # model = XGLMForCausalLM.from_pretrained(
-    #     model_name,
-    #     torch_dtype=torch.float16,
-    # )
-    # model = prepare_model_for_int8_training(model)
-    # https://pytorch.org/blog/accelerating-large-language-models/#step-3-bonus-faster-matmuls-with-padding
-    # не работает с XGLM :(
-    # model.resize_token_embeddings(len(tokenizer) // 64 * 65)
-    # model = model.half()
-    # for name, param in model.named_parameters():
-    #     for num in [31]:
-    #         if not str(num) in str(name) and "layer" in str(name):
-    #             param.requires_grad = False
-    # model = BetterTransformer.transform(model)
-    # model = torch.compile(model)
-
-    # Prepare the data
 
     if args.local_rank == 0:
         create_prompt_dataset_v2(
@@ -739,18 +356,10 @@ def main():
         tokenizer=tokenizer,
         padding=True,
         max_length=2048,
+        return_tensors="pt",
     )
 
     def collator(x):
-        # features_map = {key: [] for key in x[0].keys()}
-        # for item in x:
-        #     for key in item.keys():
-        #         features_map[key].append(item[key])
-
-        # del features_map["labels"]
-        # features_map = data_collator_pad(features_map)
-        # features_map["labels"] = features_map["input_ids"]
-        # print(x)
         features_map = data_collator_pad(x)
         return features_map
 
@@ -796,38 +405,14 @@ def main():
             pass
         return perplexity
 
-    # Split weights in two groups, one with weight decay and the other not.
-    # optimizer_grouped_parameters = get_optimizer_grouped_parameters(
-    #     model, args.weight_decay
-    # )
-
-    # AdamOptimizer = FusedAdam
-    # optimizer = AdamOptimizer(
-    #     optimizer_grouped_parameters, lr=args.learning_rate, betas=(0.9, 0.95)
-    # )
-
-    # num_update_steps_per_epoch = math.ceil(
-    #     len(train_dataloader) / args.gradient_accumulation_steps
-    # )
-    # lr_scheduler = get_scheduler(
-    #     name=args.lr_scheduler_type,
-    #     optimizer=optimizer,
-    #     num_warmup_steps=args.num_warmup_steps,
-    #     num_training_steps=args.num_train_epochs * num_update_steps_per_epoch,
-    # )
-
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=model,
-        # optimizer=optimizer,
-        # args=args,
         config=ds_config,
-        # lr_scheduler=lr_scheduler,
         dist_init_required=True,
     )
 
     if args.gradient_checkpointing:
         model.gradient_checkpointing_enable()
-    # torch._dynamo.config.suppress_errors = True
 
     # Train!
     print_rank_0("***** Running training *****", args.global_rank)
