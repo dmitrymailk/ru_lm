@@ -249,7 +249,7 @@ def main():
         "optimizer": {
             "type": "AdamW",
             "params": {
-                "lr": 3e-4,
+                "lr": 3e-6,
                 "betas": [0.9, 0.95],
                 "eps": 1e-8,
                 "weight_decay": 0.0,
@@ -318,20 +318,27 @@ def main():
         fast_tokenizer=True,
     )
     tokenizer.pad_token = tokenizer.eos_token
+    model = None
 
-    with deepspeed.zero.Init(
-        config_dict_or_path=ds_config,
-    ):
-        # model_name = "facebook/xglm-7.5B"
-        # model_name = "facebook/xglm-4.5B"
-        # model_name = "facebook/xglm-1.7B"
+    if ds_config["zero_optimization"]["stage"] == 3:
+        with deepspeed.zero.Init(
+            config_dict_or_path=ds_config,
+        ):
+            training_args = TrainingArguments(
+                deepspeed=ds_config, output_dir="./models/"
+            )
+            model = XGLMForCausalLM.from_pretrained(
+                args.model_name_or_path,
+                torch_dtype=torch.float16,
+            )
+    else:
         training_args = TrainingArguments(deepspeed=ds_config, output_dir="./models/")
         model = XGLMForCausalLM.from_pretrained(
             args.model_name_or_path,
             torch_dtype=torch.float16,
         )
 
-    model.resize_token_embeddings(len(tokenizer))
+    # model = torch.compile(model)
 
     if args.local_rank == 0:
         create_prompt_dataset_v2(
@@ -411,8 +418,8 @@ def main():
         dist_init_required=True,
     )
 
-    if args.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
+    # if args.gradient_checkpointing:
+    #     model.gradient_checkpointing_enable()
 
     # Train!
     print_rank_0("***** Running training *****", args.global_rank)
@@ -437,6 +444,7 @@ def main():
         )
         model.train()
         for step, batch in enumerate(train_dataloader):
+            deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss

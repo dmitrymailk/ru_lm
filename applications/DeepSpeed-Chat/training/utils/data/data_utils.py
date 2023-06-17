@@ -20,56 +20,7 @@ import re
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
-    if dataset_name == "Dahoas/rm-static":
-        return raw_datasets.DahoasRmstaticDataset(output_path, seed, local_rank)
-    elif dataset_name == "Dahoas/full-hh-rlhf":
-        return raw_datasets.DahoasFullhhrlhfDataset(output_path, seed, local_rank)
-    elif dataset_name == "Dahoas/synthetic-instruct-gptj-pairwise":
-        return raw_datasets.DahoasSyntheticinstructgptjpairwiseDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "yitingxie/rlhf-reward-datasets":
-        return raw_datasets.YitingxieRlhfrewarddatasetsDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "openai/webgpt_comparisons":
-        return raw_datasets.OpenaiWebgptcomparisonsDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "stanfordnlp/SHP":
-        return raw_datasets.StanfordnlpSHPDataset(output_path, seed, local_rank)
-    elif dataset_name == "self_instruct_translated":
-        return raw_datasets.RuInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "self_instruct_en":
-        return raw_datasets.EnInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_original_prompt":
-        return raw_datasets.EnDollyInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_original_prompt_v2":
-        return raw_datasets.EnDollyInstructTranslatedV2(output_path, seed, local_rank)
-    elif dataset_name == "dolly_translated_prompt":
-        return raw_datasets.RuDollyInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_translated_prompt_v2_clean_v1":
-        return raw_datasets.RuDollyInstructTranslatedV2(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_ru":
-        return raw_datasets.RuChip2Translated(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_ru_v2_clean_v1":
-        return raw_datasets.RuChip2TranslatedV2(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_en":
-        return raw_datasets.EnChip2Translated(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_en_v2_clean_v1":
-        return raw_datasets.EnChip2TranslatedV2(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_ru":
-        return raw_datasets.RuOpenAssTranslated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_ru_v2_clean_v1":
-        return raw_datasets.RuOpenAssTranslatedV2(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_en":
-        return raw_datasets.EnOpenAssTranslated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_en_v2_clean_v1":
-        return raw_datasets.EnOpenAssTranslatedV2(output_path, seed, local_rank)
-    else:
-        raise RuntimeError(
-            f"We do not have configs for dataset {dataset_name}, but you can add it by yourself in raw_datasets.py."
-        )
+    return raw_datasets.RuChip2TranslatedV2(dataset_name, seed, local_rank)
 
 
 def get_shuffle_idx(seed, size):
@@ -593,6 +544,7 @@ def prepare_dataset_v3(
     max_seq_len=2048,
 ):
     # print(example)
+
     formated_prompt = prompt_func(example)
     # print(formated_prompt)
     # formated_prompt += end_of_conversation_token
@@ -620,9 +572,10 @@ def prepare_dataset_v4(
     max_seq_len=2048,
 ):
     # print(example)
+    end_of_conversation_token = "<|endoftext|>"
     formated_prompt = prompt_func(example)
     # print(formated_prompt)
-    # formated_prompt += end_of_conversation_token
+    formated_prompt += end_of_conversation_token
     formated_prompt = add_special_tokens_v2(formated_prompt)
     chosen_token = tokenizer(
         formated_prompt,
@@ -682,7 +635,7 @@ def create_prompt_dataset_v2(
             for stage in ["train", "test"]:
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
-                        lambda x: prepare_dataset_v3(
+                        lambda x: prepare_dataset_v4(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
@@ -697,7 +650,7 @@ def create_prompt_dataset_v2(
                     train_datasets.append(train_data)
                 else:
                     eval_data = dataset.get_eval_data().map(
-                        lambda x: prepare_dataset_v3(
+                        lambda x: prepare_dataset_v4(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,

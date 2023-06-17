@@ -377,10 +377,11 @@ class RuChip2Translated(PromptRawDataset):
 class RuChip2TranslatedV2(PromptRawDataset):
     def __init__(self, output_path, seed, local_rank):
         super().__init__(output_path, seed, local_rank)
-        self.dataset_name = "chip2_instruct_alpha_prompt_ru_v2"
-        self.dataset_name_clean = "chip2_instruct_alpha_prompt_ru_v2"
+        self.dataset_name = output_path
+        self.dataset_name_clean = output_path
+        print(output_path)
         self.raw_datasets = load_from_disk(
-            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/chip2_instruct_alpha_prompt_ru_v2_clean_v1"
+            f"/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/{output_path}",
         )
         self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
 
