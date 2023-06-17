@@ -471,6 +471,11 @@ def add_special_tokens(string):
     return string
 
 
+def add_special_tokens_v2(string):
+    string = string.replace("\n", "</s>")
+    return string
+
+
 def remove_special_tokens(string):
     string = string.replace("<new_line_token>", "\n")
     string = string.replace("<tab_token>", "\t")
@@ -592,6 +597,33 @@ def prepare_dataset_v3(
     # print(formated_prompt)
     # formated_prompt += end_of_conversation_token
     formated_prompt = add_special_tokens(formated_prompt)
+    chosen_token = tokenizer(
+        formated_prompt,
+        max_length=max_seq_len,
+        # padding="max_length",
+        # padding=False,
+        truncation=True,
+        # return_tensors="pt",
+    )
+
+    return {
+        "input_ids": chosen_token["input_ids"],
+        "attention_mask": chosen_token["attention_mask"],
+        "labels": chosen_token["input_ids"],
+    }
+
+
+def prepare_dataset_v4(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    # print(example)
+    formated_prompt = prompt_func(example)
+    # print(formated_prompt)
+    # formated_prompt += end_of_conversation_token
+    formated_prompt = add_special_tokens_v2(formated_prompt)
     chosen_token = tokenizer(
         formated_prompt,
         max_length=max_seq_len,
