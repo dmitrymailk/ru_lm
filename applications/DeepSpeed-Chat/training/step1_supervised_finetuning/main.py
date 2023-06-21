@@ -58,19 +58,6 @@ from utils.model.model_utils import create_hf_model
 from typing import List, Optional, Tuple
 
 import torch
-from torch import nn
-
-import transformers
-from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
-
-from einops import rearrange
-
-from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
-from flash_attn.bert_padding import unpad_input, pad_input
-import xformers.ops as xops
-
-from optimum.bettertransformer import BetterTransformer
-from xformers.components.attention.linformer import LinformerAttention
 
 
 def parse_args():
@@ -418,8 +405,8 @@ def main():
         dist_init_required=True,
     )
 
-    # if args.gradient_checkpointing:
-    #     model.gradient_checkpointing_enable()
+    if args.gradient_checkpointing:
+        model.gradient_checkpointing_enable()
 
     # Train!
     print_rank_0("***** Running training *****", args.global_rank)
@@ -444,7 +431,7 @@ def main():
         )
         model.train()
         for step, batch in enumerate(train_dataloader):
-            deepspeed.accelerator.get_accelerator().empty_cache()
+            # deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss
