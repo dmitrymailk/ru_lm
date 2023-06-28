@@ -5,6 +5,9 @@ from collections import defaultdict
 import copy
 import json
 import os
+
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 from os.path import exists, join, isdir
 from dataclasses import dataclass, field
 import sys
@@ -883,8 +886,10 @@ def make_data_module_v2(tokenizer: transformers.PreTrainedTokenizer, args) -> Di
         features_map = data_collator(x)
         return features_map
 
+    # datasets = "chip2_instruct_alpha_prompt_en_v2_clean_v1 chip2_instruct_alpha_prompt_ru_v2_clean_v1 dolly_original_prompt_v2 dolly_translated_prompt_v2_clean_v1 openass_prompt_dataset_en_v2_clean_v1 openass_prompt_dataset_ru_v2_clean_v1".split()
     train_dataset, eval_dataset = create_prompt_dataset_v2(
         datasets_names=args.datasets,
+        # datasets_names=datasets,
         tokenizer=tokenizer,
         max_seq_len=args.source_max_len,
     )
@@ -955,7 +960,9 @@ def train():
             model=model,
         )
 
-    if "llama" in args.model_name_or_path.lower() or isinstance(tokenizer, LlamaTokenizer):
+    if "llama" in args.model_name_or_path.lower() or isinstance(
+        tokenizer, LlamaTokenizer
+    ):
         # LLaMA tokenizer may not have correct special tokens set.
         # Check and add them if missing to prevent them from being parsed into different tokens.
         # Note that these are present in the vocabulary.
