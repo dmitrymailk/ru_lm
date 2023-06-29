@@ -303,7 +303,7 @@ def self_instruct_predict_qlora(
     for i, example in tqdm(enumerate(ru_instruct)):
         print(f"{i+1}/{len(ru_instruct)} - {(1+i)/len(ru_instruct)}%")
 
-        prompt = f"Human:\n{example['instruction']}\n{example['input']}\nAssistant:"
+        prompt = f"Human:\n{example['instruction']}\n{example['input']}\nAssistant:\n"
 
         answer = example["output"]
         batch = tokenizer(
@@ -384,8 +384,9 @@ def evaluate_all_deepspeed_xglm_models(
     model_dirs = sorted([x for x in p.iterdir() if x.is_dir()])
 
     gen_config_1 = GenerationConfig(
-        max_new_tokens=512,
+        max_new_tokens=2048,
         repetition_penalty=1.1,
+        eos_token_id=[400],
     )
 
     class StoppingCriteriaSub(StoppingCriteria):
@@ -411,6 +412,12 @@ def evaluate_all_deepspeed_xglm_models(
 
     for finetuned_model in model_dirs:
         finetuned_model = str(finetuned_model)
+        print("=" * 50)
+        print("=" * 50)
+        print("=" * 50)
+        print(f"EVALUATE MODEL {finetuned_model}")
+        print("=" * 50)
+        print("=" * 50)
         model = AutoModelForCausalLM.from_pretrained(
             finetuned_model,
             torch_dtype=torch.float16,
@@ -421,18 +428,22 @@ def evaluate_all_deepspeed_xglm_models(
             padding_side="left",
         )
         model = model.eval()
-        clean_name = make_clean_name(finetuned_model.split("/")[-2:])
+        clean_name = "".join(finetuned_model.split("/")[-2:])
+        clean_name = make_clean_name(clean_name)
         table = {
             "finetuned_model": [],
             "prompt": [],
             "original_answer": [],
             "finetuned_model_output": [],
+            "gen_config": [],
         }
 
         for i, example in tqdm(enumerate(ru_instruct)):
             print(f"{i+1}/{len(ru_instruct)} - {(1+i)/len(ru_instruct)}%")
 
-            prompt = f"Human:\n{example['instruction']}\n{example['input']}\nAssistant:"
+            prompt = (
+                f"Human:\n{example['instruction']}\n{example['input']}\nAssistant:\n"
+            )
 
             stopping_criteria = StoppingCriteriaList(
                 [
@@ -456,18 +467,19 @@ def evaluate_all_deepspeed_xglm_models(
                 generation_config=gen_config_1,
                 stopping_criteria=stopping_criteria,
             )
-            finetuned_result_1 = decode_v2(output_tokens_1[0], tokenizer=tokenizer)
+            finetuned_result = decode_v2(output_tokens_1[0], tokenizer=tokenizer)
 
             table["prompt"].append(prompt)
             table["finetuned_model"].append(clean_name)
-            table["finetuned_model_output_1"].append(finetuned_result_1)
-            table["gen_config_1"].append(gen_config_1.to_dict())
+            table["finetuned_model_output"].append(finetuned_result)
+            table["gen_config"].append(gen_config_1.to_dict())
             table["original_answer"].append(answer)
 
             print()
             print(prompt)
             print("=" * 50)
-            print("Finetuned 1: ", finetuned_result_1)
+            print(clean_name)
+            print("Finetuned 1: ", finetuned_result)
             print("=" * 50)
             print("Real: ", answer)
             print("=" * 100)
@@ -477,6 +489,8 @@ def evaluate_all_deepspeed_xglm_models(
             f"{finetuned_model}/{clean_name}.csv",
             index=False,
         )
+        del model
+        torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
