@@ -181,11 +181,11 @@ def translate_dolly(device):
         json.dump(translated_examples, outfile)
 
 
-def translate_openass():
+def translate_openass(device="cuda"):
     base_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/"
     save_folder = "openass_translated_en2ru"
     full_path = f"{base_path}{save_folder}/"
-    file_name = "openass_translated_en2ru.json"
+    file_name = "openass_translated_en2ru_v2.json"
     assert os.path.isdir(full_path)
 
     dataset = pd.read_json(
@@ -197,16 +197,27 @@ def translate_openass():
     model_name = "facebook/wmt21-dense-24-wide-en-x"
     translator = Translator(
         model_name=model_name,
-        device="cuda:2",
+        device=device,
     )
 
     translated_examples = []
     for i in tqdm(range(len(dataset))):
         example = dataset.iloc[i].to_dict()
         text = example["text"]
-        translated = translator(text=text)
+        print(text)
+        print("-" * 50)
+        texts = text.split("\n")
+        all_translated = []
+        for text in texts:
+            translated = translator(text=text)
+            all_translated.append(translated)
+
+        translated = "\n".join(all_translated)
         example[f"text_translated"] = translated
         translated_examples.append(example)
+        print(translated)
+        print("-" * 100)
+        print("-" * 100)
         # if i > 20:
         #     break
 
@@ -215,11 +226,11 @@ def translate_openass():
     print()
 
 
-def translate_chip2():
+def translate_chip2(device="cuda"):
     base_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/"
     save_folder = "chip2_instruct_alpha"
     full_path = f"{base_path}{save_folder}/"
-    file_name = "chip2_instruct_alpha_v6a_4_translated.json"
+    file_name = "chip2_instruct_alpha_v6a_4_translated_v2.json"
     assert os.path.isdir(full_path)
 
     dataset = pd.read_json(
@@ -229,7 +240,7 @@ def translate_chip2():
     model_name = "facebook/wmt21-dense-24-wide-en-x"
     translator = Translator(
         model_name=model_name,
-        device="cuda:3",
+        device=device,
     )
 
     translated_examples = []
@@ -238,9 +249,20 @@ def translate_chip2():
         example = dataset.iloc[i].to_dict()
         for field in fields:
             text = example[field]
-            translated = translator(text=text)
+            print(text)
+            print("-" * 50)
+            texts = text.split("\n")
+            all_translated = []
+            for text in texts:
+                translated = translator(text=text)
+                all_translated.append(translated)
+
+            translated = "\n".join(all_translated)
+            print(translated)
             example[f"{field}_translated"] = translated
         translated_examples.append(example)
+        print("-" * 100)
+        print("-" * 100)
         # if i > 20:
         #     break
 
@@ -251,6 +273,6 @@ def translate_chip2():
 
 if __name__ == "__main__":
     print("Start translation")
-    # translate_openass()
-    # translate_chip2()
-    translate_dolly(device="cuda:0")
+    # translate_openass(device="cuda:1")
+    translate_chip2(device="cuda:1")
+    # translate_dolly(device="cuda:0")

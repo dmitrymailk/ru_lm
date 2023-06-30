@@ -11,6 +11,28 @@
 			"program": "${file}",
 			"console": "integratedTerminal",
 			"justMyCode": false
-		}
+		},
+		{
+			"name": "Debug qlora",
+			"type": "python",
+			"request": "launch",
+			"module": "qlora_train",
+			"console": "integratedTerminal",
+			"justMyCode": false,
+			"args": [
+				"--datasets",
+				"chip2_instruct_alpha_prompt_en_v2_clean_v1 chip2_instruct_alpha_prompt_ru_v2_clean_v1 dolly_original_prompt_v2 dolly_translated_prompt_v2_clean_v1 openass_prompt_dataset_en_v2_clean_v1 openass_prompt_dataset_ru_v2_clean_v1",
+				"--source_max_len",
+				"2048",
+				"--model_name_or_path",
+				"facebook/xglm-7.5B",
+				"--max_steps",
+				"20000",
+				"--save_steps",
+				"5000",
+				"--gradient_checkpointing",
+				"True"
+			]
+		},
 	]
 }

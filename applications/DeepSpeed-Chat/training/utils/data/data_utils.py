@@ -16,47 +16,11 @@ from itertools import chain
 from . import raw_datasets
 from datasets import concatenate_datasets, load_from_disk
 import hashlib
+import re
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
-    if dataset_name == "Dahoas/rm-static":
-        return raw_datasets.DahoasRmstaticDataset(output_path, seed, local_rank)
-    elif dataset_name == "Dahoas/full-hh-rlhf":
-        return raw_datasets.DahoasFullhhrlhfDataset(output_path, seed, local_rank)
-    elif dataset_name == "Dahoas/synthetic-instruct-gptj-pairwise":
-        return raw_datasets.DahoasSyntheticinstructgptjpairwiseDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "yitingxie/rlhf-reward-datasets":
-        return raw_datasets.YitingxieRlhfrewarddatasetsDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "openai/webgpt_comparisons":
-        return raw_datasets.OpenaiWebgptcomparisonsDataset(
-            output_path, seed, local_rank
-        )
-    elif dataset_name == "stanfordnlp/SHP":
-        return raw_datasets.StanfordnlpSHPDataset(output_path, seed, local_rank)
-    elif dataset_name == "self_instruct_translated":
-        return raw_datasets.RuInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "self_instruct_en":
-        return raw_datasets.EnInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_original_prompt":
-        return raw_datasets.EnDollyInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "dolly_translated_prompt":
-        return raw_datasets.RuDollyInstructTranslated(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_ru":
-        return raw_datasets.RuChip2Translated(output_path, seed, local_rank)
-    elif dataset_name == "chip2_instruct_alpha_prompt_en":
-        return raw_datasets.EnChip2Translated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_ru":
-        return raw_datasets.RuOpenAssTranslated(output_path, seed, local_rank)
-    elif dataset_name == "openass_prompt_dataset_en":
-        return raw_datasets.EnOpenAssTranslated(output_path, seed, local_rank)
-    else:
-        raise RuntimeError(
-            f"We do not have configs for dataset {dataset_name}, but you can add it by yourself in raw_datasets.py."
-        )
+    return raw_datasets.RuChip2TranslatedV2(dataset_name, seed, local_rank)
 
 
 def get_shuffle_idx(seed, size):
@@ -431,7 +395,7 @@ def create_prompt_dataset(
         return train_dataset, eval_dataset
 
 
-def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=512):
+def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=2048):
     # print(example)
     end_of_conversation_token = "<|endoftext|>"
     formated_prompt = prompt_func(example)
@@ -444,6 +408,184 @@ def prepare_dataset(prompt_func, example, tokenizer, max_seq_len=512):
         truncation=True,
         # return_tensors="pt",
     )
+    return {
+        "input_ids": chosen_token["input_ids"],
+        "attention_mask": chosen_token["attention_mask"],
+        "labels": chosen_token["input_ids"],
+    }
+
+
+def add_special_tokens(string):
+    string = string.replace("\n", "<new_line_token>")
+    string = string.replace("\t", "<tab_token>")
+    string = string.replace("  ", "<space_token><space_token>")
+    return string
+
+
+def add_special_tokens_v2(string):
+    string = string.replace("\n", "</s>")
+    return string
+
+
+def remove_special_tokens(string):
+    string = string.replace("<new_line_token>", "\n")
+    string = string.replace("<tab_token>", "\t")
+    string = string.replace("<space_token><space_token>", "  ")
+    return string
+
+
+def encode(
+    text: str,
+    tokenizer,
+    special_tokens=True,
+):
+    text = add_special_tokens(text)
+    text = tokenizer.encode(text, add_special_tokens=special_tokens)
+    return text
+
+
+def decode(tokens: list[int], tokenizer):
+    tokens = tokenizer.decode(tokens)
+    tokens = remove_special_tokens(tokens)
+    return tokens
+
+
+def mask_human_prompt(input_text, tokenizer, mask_index=-100):
+    # print(input_text)
+
+    groups = []
+    human_regex = re.finditer(r"\nHuman:", input_text)
+    assistant_regex = re.finditer(r"Assistant:\n", input_text)
+    for human_label, assistant_label in zip(human_regex, assistant_regex):
+        span_start = human_label.span()
+        span_end = assistant_label.span()
+        group = input_text[span_start[0] : span_end[1]]
+        groups.append(group)
+
+    new_text = input_text
+    special_token = "<my_special_replace_token>"
+    for span in groups:
+        new_text = new_text.replace(span, special_token)
+
+    new_text = new_text.split(special_token)
+    new_text.pop(0)
+
+    original_text = []
+    group_index = 0
+    splitted_index = 0
+    use_special_tokens = True
+    total_texts = len(new_text) + len(groups)
+
+    for i in range(total_texts):
+        if i % 2 == 0:
+            tokens = groups[group_index]
+            # tokens = encode_decode(tokens, special_tokens=use_special_tokens)
+            tokens = encode(
+                tokens, tokenizer=tokenizer, special_tokens=use_special_tokens
+            )
+            tokens = [mask_index for _ in range(len(tokens))]
+            original_text.extend(tokens)
+            group_index += 1
+        else:
+            tokens = new_text[splitted_index]
+            tokens = encode(
+                tokens, tokenizer=tokenizer, special_tokens=use_special_tokens
+            )
+            original_text.extend(tokens)
+            splitted_index += 1
+
+        if use_special_tokens:
+            use_special_tokens = False
+
+    return original_text
+
+
+def prepare_dataset_v2(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    # print(example)
+    formated_prompt = prompt_func(example)
+    # print(formated_prompt)
+    # formated_prompt += end_of_conversation_token
+    original_prompt = formated_prompt
+    formated_prompt = add_special_tokens(formated_prompt)
+    chosen_token = tokenizer(
+        formated_prompt,
+        max_length=max_seq_len,
+        # padding="max_length",
+        # padding=False,
+        truncation=True,
+        # return_tensors="pt",
+    )
+    masked_prompt = mask_human_prompt(
+        input_text=original_prompt,
+        tokenizer=tokenizer,
+    )
+    masked_prompt = masked_prompt[:max_seq_len]
+    if len(masked_prompt) == 0:
+        print(formated_prompt)
+
+    return {
+        "input_ids": chosen_token["input_ids"],
+        "attention_mask": chosen_token["attention_mask"],
+        "labels": masked_prompt,
+        # "labels": [masked_prompt],
+        # "labels": chosen_token["input_ids"],
+    }
+
+
+def prepare_dataset_v3(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    # print(example)
+
+    formated_prompt = prompt_func(example)
+    # print(formated_prompt)
+    # formated_prompt += end_of_conversation_token
+    formated_prompt = add_special_tokens(formated_prompt)
+    chosen_token = tokenizer(
+        formated_prompt,
+        max_length=max_seq_len,
+        # padding="max_length",
+        # padding=False,
+        truncation=True,
+        # return_tensors="pt",
+    )
+
+    return {
+        "input_ids": chosen_token["input_ids"],
+        "attention_mask": chosen_token["attention_mask"],
+        "labels": chosen_token["input_ids"],
+    }
+
+
+def prepare_dataset_v4(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    # print(example)
+    end_of_conversation_token = "<|endoftext|>"
+    formated_prompt = prompt_func(example)
+    # print(formated_prompt)
+    formated_prompt += end_of_conversation_token
+    formated_prompt = add_special_tokens_v2(formated_prompt)
+    chosen_token = tokenizer(
+        formated_prompt,
+        max_length=max_seq_len,
+        # padding="max_length",
+        # padding=False,
+        truncation=True,
+        # return_tensors="pt",
+    )
+
     return {
         "input_ids": chosen_token["input_ids"],
         "attention_mask": chosen_token["attention_mask"],
@@ -493,13 +635,14 @@ def create_prompt_dataset_v2(
             for stage in ["train", "test"]:
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
-                        lambda x: prepare_dataset(
+                        lambda x: prepare_dataset_v4(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
                         ),
                         num_proc=32,
+                        load_from_cache_file=False,
                     )
                     train_data = train_data.select_columns(
                         ["input_ids", "attention_mask", "labels"]
@@ -507,13 +650,14 @@ def create_prompt_dataset_v2(
                     train_datasets.append(train_data)
                 else:
                     eval_data = dataset.get_eval_data().map(
-                        lambda x: prepare_dataset(
+                        lambda x: prepare_dataset_v4(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
                             max_seq_len=max_seq_len,
                         ),
                         num_proc=32,
+                        load_from_cache_file=False,
                     )
                     eval_data = eval_data.select_columns(
                         ["input_ids", "attention_mask", "labels"]

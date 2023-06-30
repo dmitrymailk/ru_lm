@@ -332,6 +332,27 @@ class RuDollyInstructTranslated(PromptRawDataset):
 
 
 # russian dataset
+class RuDollyInstructTranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = "dolly_translated_prompt_v2"
+        self.dataset_name_clean = "dolly_translated_prompt_v2"
+        self.raw_datasets = load_from_disk(
+            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/dolly_translated_prompt_v2_clean_v1"
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+# russian dataset
 class RuChip2Translated(PromptRawDataset):
     def __init__(self, output_path, seed, local_rank):
         super().__init__(output_path, seed, local_rank)
@@ -353,6 +374,28 @@ class RuChip2Translated(PromptRawDataset):
 
 
 # russian dataset
+class RuChip2TranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = output_path
+        self.dataset_name_clean = output_path
+        print(output_path)
+        self.raw_datasets = load_from_disk(
+            f"/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/{output_path}",
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+# russian dataset
 class RuOpenAssTranslated(PromptRawDataset):
     def __init__(self, output_path, seed, local_rank):
         super().__init__(output_path, seed, local_rank)
@@ -360,6 +403,26 @@ class RuOpenAssTranslated(PromptRawDataset):
         self.dataset_name_clean = "openass_prompt_dataset_ru"
         self.raw_datasets = load_from_disk(
             "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/openass_prompt_dataset_ru"
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+class RuOpenAssTranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = "openass_prompt_dataset_ru_v2"
+        self.dataset_name_clean = "openass_prompt_dataset_ru_v2"
+        self.raw_datasets = load_from_disk(
+            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/openass_prompt_dataset_ru_v2_clean_v1"
         )
         self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
 
@@ -395,6 +458,27 @@ class EnDollyInstructTranslated(PromptRawDataset):
 
 
 # english dataset
+class EnDollyInstructTranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = "dolly_original_prompt_v2"
+        self.dataset_name_clean = "dolly_original_prompt_v2"
+        self.raw_datasets = load_from_disk(
+            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/dolly_original_prompt_v2"
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+# english dataset
 class EnChip2Translated(PromptRawDataset):
     def __init__(self, output_path, seed, local_rank):
         super().__init__(output_path, seed, local_rank)
@@ -402,6 +486,26 @@ class EnChip2Translated(PromptRawDataset):
         self.dataset_name_clean = "chip2_instruct_alpha_prompt_en"
         self.raw_datasets = load_from_disk(
             "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/chip2_instruct_alpha_prompt_en"
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+class EnChip2TranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = "chip2_instruct_alpha_prompt_en_v2"
+        self.dataset_name_clean = "chip2_instruct_alpha_prompt_en_v2"
+        self.raw_datasets = load_from_disk(
+            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/chip2_instruct_alpha_prompt_en_v2_clean_v1"
         )
         self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
 
@@ -423,6 +527,26 @@ class EnOpenAssTranslated(PromptRawDataset):
         self.dataset_name_clean = "openass_prompt_dataset_en"
         self.raw_datasets = load_from_disk(
             "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/openass_prompt_dataset_en"
+        )
+        self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt_and_chosen(self, sample):
+        return sample["prompt"]
+
+
+class EnOpenAssTranslatedV2(PromptRawDataset):
+    def __init__(self, output_path, seed, local_rank):
+        super().__init__(output_path, seed, local_rank)
+        self.dataset_name = "openass_prompt_dataset_en_v2"
+        self.dataset_name_clean = "openass_prompt_dataset_en_v2"
+        self.raw_datasets = load_from_disk(
+            "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/prompt_datasets/openass_prompt_dataset_en_v2_clean_v1"
         )
         self.raw_datasets = self.raw_datasets.train_test_split(test_size=100, seed=42)
 
