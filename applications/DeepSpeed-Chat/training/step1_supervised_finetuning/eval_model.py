@@ -427,7 +427,9 @@ def evaluate_all_deepspeed_xglm_models(
             "facebook/xglm-4.5B",
             padding_side="left",
         )
+        tokenizer.pad_token = tokenizer.eos_token
         model = model.eval()
+        
         clean_name = "".join(finetuned_model.split("/")[-2:])
         clean_name = make_clean_name(clean_name)
         table = {
@@ -497,9 +499,9 @@ if __name__ == "__main__":
     print("Starting evaluation.")
     # compare_baseline_finetuned()
     # compare_pretrained_models()
-    # self_instruct_predict_qlora(
-    #     model_name="adapter_xglm_7.5B_v1/checkpoint-20000",
-    # )
-    evaluate_all_deepspeed_xglm_models(
-        base_path="xglm-4.5B_ru_v10",
+    self_instruct_predict_qlora(
+        model_name="red_pajama_chat_ru_v1/checkpoint-20000",
     )
+    # evaluate_all_deepspeed_xglm_models(
+    #     base_path="xglm-4.5B_ru_v10",
+    # )

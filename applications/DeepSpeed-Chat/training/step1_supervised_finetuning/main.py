@@ -174,7 +174,7 @@ def parse_args():
     )
     # deepspeed features
     parser.add_argument(
-        "--offload", action="store_true", help="Enable ZeRO Offload techniques."
+        "--zero_plus_plus", action="store_true", help="Enable ZeRO++ techniques."
     )
     parser.add_argument(
         "--zero_stage",
@@ -182,32 +182,9 @@ def parse_args():
         default=0,
         help="ZeRO optimization stage for Actor model (and clones).",
     )
-    ## LoRA for efficient training setting
-    parser.add_argument(
-        "--lora_dim",
-        type=int,
-        default=0,
-        help="If > 0, use LoRA for efficient training.",
-    )
-    parser.add_argument(
-        "--lora_module_name",
-        type=str,
-        default="decoder.layers.",
-        help="The scope of LoRA.",
-    )
-    parser.add_argument(
-        "--only_optimize_lora",
-        action="store_true",
-        help="Only optimize the LoRA parameters.",
-    )
+
     parser = deepspeed.add_config_arguments(parser)
     args = parser.parse_args()
-
-    # Validate settings
-    if args.gradient_checkpointing and args.lora_dim > 0:
-        assert (
-            not args.only_optimize_lora
-        ), "--gradient_checkpointing and --only_optimizer_lora cannot be enabled at the same time."
 
     return args
 
@@ -264,16 +241,6 @@ def main():
             "stage3_max_reuse_distance": 1e9,
             "stage3_gather_fp16_weights_on_model_save": True,
         },
-        # "zero_optimization": {
-        #     "stage": 2,
-        #     "offload_optimizer": {"device": "none", "pin_memory": True},
-        #     "allgather_partitions": True,
-        #     "allgather_bucket_size": 2e8,
-        #     "overlap_comm": True,
-        #     "reduce_scatter": True,
-        #     "reduce_bucket_size": 2e8,
-        #     "contiguous_gradients": True,
-        # },
         "gradient_accumulation_steps": 8,
         "gradient_clipping": 1.0,
         "steps_per_print": 100,
@@ -290,6 +257,33 @@ def main():
         * torch.cuda.device_count()
         * ds_config["gradient_accumulation_steps"]
     )
+
+    if args.zero_plus_plus:
+        print("Enable Zero++")
+        zero_plus_plus_config = {
+            "zero_optimization": {
+                "stage": 3,
+                "reduce_bucket_size": 10000000,
+                "reduce_scatter": True,
+                "zero_quantized_weights": True,
+                "zero_hpz_partition_size": 1,
+                "zero_quantized_gradients": True,
+                "contiguous_gradients": True,
+                "overlap_comm": True,
+                "offload_optimizer": {"device": "none", "pin_memory": True},
+                "offload_param": {"device": "none", "pin_memory": True},
+                "overlap_comm": True,
+                "contiguous_gradients": True,
+                "sub_group_size": 1e9,
+                "reduce_bucket_size": "auto",
+                "stage3_prefetch_bucket_size": "auto",
+                "stage3_param_persistence_threshold": "auto",
+                "stage3_max_live_parameters": 1e9,
+                "stage3_max_reuse_distance": 1e9,
+                "stage3_gather_fp16_weights_on_model_save": True,
+            }
+        }
+        ds_config["zero_optimization"] = zero_plus_plus_config["zero_optimization"]
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
@@ -324,6 +318,12 @@ def main():
             args.model_name_or_path,
             torch_dtype=torch.float16,
         )
+
+    for name, param in model.named_parameters():
+        name = str(name)
+        # print(name)
+        if not "bias" in name:
+            param.requires_grad = False
 
     # model = torch.compile(model)
 
@@ -381,6 +381,7 @@ def main():
         model.eval()
         losses = 0
         for step, batch in enumerate(eval_dataloader):
+            deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             print_rank_0(f"***Evaluation {step}/{len(eval_dataloader)}***")
             with torch.no_grad():
@@ -399,14 +400,14 @@ def main():
             pass
         return perplexity
 
+    if args.gradient_checkpointing:
+        model.gradient_checkpointing_enable()
+
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=model,
         config=ds_config,
         dist_init_required=True,
     )
-
-    if args.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
 
     # Train!
     print_rank_0("***** Running training *****", args.global_rank)
@@ -431,7 +432,7 @@ def main():
         )
         model.train()
         for step, batch in enumerate(train_dataloader):
-            # deepspeed.accelerator.get_accelerator().empty_cache()
+            deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss
