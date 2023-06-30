@@ -18,10 +18,52 @@ from telegram.ext import (
 )
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import GenerationConfig, StoppingCriteria, StoppingCriteriaList
 
 import pandas as pd
 import torch
 import gc
+
+
+def add_special_tokens_v2(string):
+    string = string.replace("\n", "</s>")
+    return string
+
+
+def remove_special_tokens_v2(string):
+    string = string.replace("</s>", "\n")
+    string = string.replace("\n ", "\n")
+    string = string.replace("<|endoftext|>", "")
+    return string
+
+
+def encode_v2(text: str, tokenizer, special_tokens=True):
+    text = add_special_tokens_v2(text)
+    text = tokenizer.encode(text, add_special_tokens=special_tokens)
+    return text
+
+
+def decode_v2(tokens: list[int], tokenizer):
+    tokens = tokenizer.decode(tokens)
+    tokens = remove_special_tokens_v2(tokens)
+    return tokens
+
+
+class StoppingCriteriaSub(StoppingCriteria):
+    def __init__(self, stops, tokenizer, prompt):
+        super().__init__()
+        self.stops = stops
+        self.tokenizer = tokenizer
+        self.prompt = add_special_tokens_v2(prompt)
+        self.prompt = tokenizer.decode(tokenizer.encode(self.prompt))
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor):
+        for stop in self.stops:
+            generated_temp_ids = input_ids.tolist()[0]
+            if stop in tokenizer.decode(generated_temp_ids)[len(self.prompt) :]:
+                return True
+
+        return False
 
 
 class DialogBotV3:
@@ -44,7 +86,21 @@ class DialogBotV3:
         user_message = f"Human: {user_message} Assistant:"
         sample = self.tokenizer(
             user_message,
-            max_length=512,
+            max_length=1024,
+            return_tensors="pt",
+            truncation=True,
+        ).to(self.device)
+
+        return sample
+
+    def _get_sample_v2(
+        self,
+        user_message: str,
+    ):
+        user_message = f"Human:\n{user_message}\nAssistant:\n"
+        sample = self.tokenizer(
+            user_message,
+            max_length=1024,
             return_tensors="pt",
             truncation=True,
         ).to(self.device)
@@ -55,30 +111,49 @@ class DialogBotV3:
         self,
         user_message: str,
     ) -> str:
-        sample = self._get_sample(
+        sample = self._get_sample_v2(
             user_message=user_message,
         )
         answer = self.generate_response(sample)
-        answer = self.tokenizer.batch_decode(
-            answer,
-            skip_special_tokens=True,
-        )
         answer = self.extract_answer(answer[0])
         return answer
 
-    def generate_response(self, sample):
+    def generate_response(self, prompt):
+        stop_words = [
+            "<|endoftext|>",
+            "Human:",
+        ]
+        stopping_criteria = StoppingCriteriaList(
+            [
+                StoppingCriteriaSub(
+                    stops=stop_words,
+                    tokenizer=tokenizer,
+                    prompt=prompt,
+                )
+            ]
+        )
+        gen_config = GenerationConfig(
+            max_new_tokens=2048,
+            repetition_penalty=1.1,
+            eos_token_id=[400],
+        )
+
         with torch.no_grad():
-            result = self.model.generate(
-                **sample,
-                max_new_tokens=512,
-                penalty_alpha=0.25,
-                top_k=4,
-                repetition_penalty=1.1,
-                # do_sample=True,
+            input_text = encode_v2(
+                prompt,
+                tokenizer=tokenizer,
             )
+            input_text = torch.tensor([input_text]).to("cuda")
+
+            output_tokens = self.model.generate(
+                input_text,
+                generation_config=gen_config,
+                stopping_criteria=stopping_criteria,
+            )
+            finetuned_result = decode_v2(output_tokens[0], tokenizer=tokenizer)
             torch.cuda.empty_cache()
             gc.collect()
-            return result
+            return finetuned_result
 
     def start_chat(self):
         while True:
@@ -106,7 +181,6 @@ class DialogBotV3:
         search_str = "Assistant"
         search_index = g_answer.index(search_str) + len(search_str) + 1
         answer = g_answer[search_index:]
-        answer = answer.replace("<|endoftext|>", "")
         if "Human:" in answer:
             search_str = "Human:"
             print(answer)
@@ -124,7 +198,8 @@ logger = logging.getLogger(__name__)
 DIALOG = range(1)
 
 # path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v5/"
-path = "dim/xglm_ru_v5"
+# path = "dim/xglm_ru_v5"
+path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=61712"
 model = AutoModelForCausalLM.from_pretrained(
     path,
     # load_in_8bit=True,
@@ -138,6 +213,7 @@ model.half()
 tokenizer = AutoTokenizer.from_pretrained(
     path,
 )
+tokenizer.pad_token = tokenizer.eos_token
 
 bot = DialogBotV3(
     model=model,

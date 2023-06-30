@@ -5,14 +5,12 @@
 
 # DeepSpeed Team
 OUTPUT=$1
-ZERO_STAGE=$2
 if [ "$OUTPUT" == "" ]; then
     OUTPUT=./output
     exit
 fi
-if [ "$ZERO_STAGE" == "" ]; then
-    ZERO_STAGE=3
-fi
+
+ZERO_STAGE=2
 mkdir -p ./models/$OUTPUT
 export WANDB_NAME=$OUTPUT
 
@@ -39,5 +37,5 @@ nohup deepspeed main.py \
    --seed 1234 \
    --zero_stage $ZERO_STAGE \
    --deepspeed \
-   --zero_plus_plus \
    --output_dir ./models/$OUTPUT > ./models/$OUTPUT/training.log &
+#    --zero_plus_plus \

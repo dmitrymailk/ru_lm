@@ -204,6 +204,7 @@ def main():
     ds_config = {
         "fp16": {
             "enabled": True,
+            "auto_cast": True,
             "loss_scale": 0,
             "loss_scale_window": 1000,
             "initial_scale_power": 16,
@@ -241,6 +242,9 @@ def main():
             "stage3_max_reuse_distance": 1e9,
             "stage3_gather_fp16_weights_on_model_save": True,
         },
+        # "zero_optimization": {
+        #     "stage": 0,
+        # },
         "gradient_accumulation_steps": 8,
         "gradient_clipping": 1.0,
         "steps_per_print": 100,
@@ -273,7 +277,6 @@ def main():
                 "offload_optimizer": {"device": "none", "pin_memory": True},
                 "offload_param": {"device": "none", "pin_memory": True},
                 "overlap_comm": True,
-                "contiguous_gradients": True,
                 "sub_group_size": 1e9,
                 "reduce_bucket_size": "auto",
                 "stage3_prefetch_bucket_size": "auto",
@@ -319,11 +322,27 @@ def main():
             torch_dtype=torch.float16,
         )
 
+    learn_params = [
+        # "bias",
+        # *[str(num) for num in range(29, 32)],
+        # "0"
+        # "fc",
+        # "bias",
+        # "v_proj",
+        # "k_proj",
+        # "q_proj",
+        # "out_proj",
+        # "layer_norm",
+        "31",
+    ]
+    print_rank_0(learn_params)
     for name, param in model.named_parameters():
         name = str(name)
-        # print(name)
-        if not "bias" in name:
-            param.requires_grad = False
+        print_rank_0(name)
+
+        for learn_param in learn_params:
+            if not learn_param in name and "layers" in name:
+                param.requires_grad = False
 
     # model = torch.compile(model)
 
@@ -381,7 +400,7 @@ def main():
         model.eval()
         losses = 0
         for step, batch in enumerate(eval_dataloader):
-            deepspeed.accelerator.get_accelerator().empty_cache()
+            # deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             print_rank_0(f"***Evaluation {step}/{len(eval_dataloader)}***")
             with torch.no_grad():
@@ -432,10 +451,12 @@ def main():
         )
         model.train()
         for step, batch in enumerate(train_dataloader):
-            deepspeed.accelerator.get_accelerator().empty_cache()
+            # deepspeed.accelerator.get_accelerator().empty_cache()
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss
+            if args.global_rank == 0:
+                print(loss.item())
             model.backward(loss)
             model.step()
             if (step + 1) % checkpoint_steps == 0:
