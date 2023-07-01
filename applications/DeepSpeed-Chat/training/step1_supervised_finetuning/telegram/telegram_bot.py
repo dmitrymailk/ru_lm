@@ -98,14 +98,8 @@ class DialogBotV3:
         user_message: str,
     ):
         user_message = f"Human:\n{user_message}\nAssistant:\n"
-        sample = self.tokenizer(
-            user_message,
-            max_length=1024,
-            return_tensors="pt",
-            truncation=True,
-        ).to(self.device)
 
-        return sample
+        return user_message
 
     def chat(
         self,
@@ -115,7 +109,7 @@ class DialogBotV3:
             user_message=user_message,
         )
         answer = self.generate_response(sample)
-        answer = self.extract_answer(answer[0])
+        answer = self.extract_answer(answer)
         return answer
 
     def generate_response(self, prompt):
@@ -127,7 +121,7 @@ class DialogBotV3:
             [
                 StoppingCriteriaSub(
                     stops=stop_words,
-                    tokenizer=tokenizer,
+                    tokenizer=self.tokenizer,
                     prompt=prompt,
                 )
             ]
@@ -141,7 +135,7 @@ class DialogBotV3:
         with torch.no_grad():
             input_text = encode_v2(
                 prompt,
-                tokenizer=tokenizer,
+                tokenizer=self.tokenizer,
             )
             input_text = torch.tensor([input_text]).to("cuda")
 
@@ -150,7 +144,7 @@ class DialogBotV3:
                 generation_config=gen_config,
                 stopping_criteria=stopping_criteria,
             )
-            finetuned_result = decode_v2(output_tokens[0], tokenizer=tokenizer)
+            finetuned_result = decode_v2(output_tokens[0], tokenizer=self.tokenizer)
             torch.cuda.empty_cache()
             gc.collect()
             return finetuned_result
@@ -186,6 +180,7 @@ class DialogBotV3:
             print(answer)
             search_index = answer.index(search_str) + len(search_str) + 1
             answer = answer = answer[:search_index]
+        answer = answer.replace("Human:", "")
         return answer
 
 
@@ -199,7 +194,8 @@ DIALOG = range(1)
 
 # path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v5/"
 # path = "dim/xglm_ru_v5"
-path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=61712"
+# path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=61712"
+path = "dim/xglm-4.5B_ru_v10_epoch_6_step_61712"
 model = AutoModelForCausalLM.from_pretrained(
     path,
     # load_in_8bit=True,
