@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument(
         "--data_path",
         nargs="*",
-        default=["Dahoas/rm-static"],
+        default=["dolly_translated_prompt_v2_clean_v1"],
         help="Path to the training dataset. Accepted format:"
         "1) a single data path, 2) multiple datasets in the"
         "form: dataset1-path dataset2-path ...",
@@ -62,10 +62,10 @@ def parse_args():
 
 
 def main():
-    os.environ["WANDB_PROJECT"] = "rulm_self_instruct"
+    os.environ["WANDB_PROJECT"] = "test_self_instruct"
     args = parse_args()
-    model_name = "facebook/xglm-7.5B"
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model_name = "facebook/xglm-4.5B"
+    model = AutoModelForCausalLM.from_pretrained(model_name, load_in_8bit=True)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     ds_config = {
@@ -77,7 +77,6 @@ def main():
             "hysteresis": 2,
             "min_loss_scale": 1,
         },
-
         "optimizer": {
             "type": "OnebitAdam",
             "params": {

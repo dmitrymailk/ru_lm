@@ -1,529 +1,265 @@
-import os
-import sys
+"""
+Fine-Tune Falcon LLM models
+"""
 
-
-import torch
-import torch.nn as nn
-import bitsandbytes as bnb
-from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
-from peft import LoraConfig, get_peft_model, prepare_model_for_int8_training
-
-import transformers
+import argparse
 from datasets import load_dataset
+import torch
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    AutoTokenizer,
+    Trainer,
+)
+from peft import LoraConfig
+import transformers
+from transformers import TrainingArguments, DataCollatorForSeq2Seq
+from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
+from trl import SFTTrainer
+from accelerate import Accelerator
+from peft import (
+    prepare_model_for_kbit_training,
+    LoraConfig,
+    get_peft_model,
+    PeftModel,
+    prepare_model_for_int8_training,
+)
+from peft.tuners.lora import LoraLayer
+import sys
+import os
+import bitsandbytes as bnb
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 )
 from utils.data.data_utils import create_prompt_dataset_v2
-import argparse
-
-from torch.profiler import profile, record_function, ProfilerActivity
-from optimum.bettertransformer import BetterTransformer
-from typing import List, Optional, Tuple
 
 
-from einops import rearrange
-
-from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
-from flash_attn.bert_padding import unpad_input, pad_input
-import xformers.ops as xops
-from xformers.components.attention.favor import FavorAttention
-from xformers.components.attention.random import RandomAttention
-from xformers.components.attention.linformer import LinformerAttention
-from xformers.components.attention.feature_maps import FeatureMapType
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Finetune a transformers model on a causal language modeling task"
-    )
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--local_rank", type=int, default=0)
+    parser.add_argument("--model_name", type=str, default="facebook/xglm-4.5B")
+    parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument(
-        "--data_path",
+        "--quantize_mode",
+        type=str,
+        default="16bit",
+        choices=["4bit", "8bit", "16bit"],
+    )
+    parser.add_argument("--max_steps", type=int, default=20000)
+    parser.add_argument("--save_steps", type=int, default=20000)
+    parser.add_argument("--max_seq_len", type=int, default=2048)
+    parser.add_argument("--batch_size_per_device", type=int, default=16)
+    parser.add_argument(
+        "--datasets",
         nargs="*",
-        default=["Dahoas/rm-static"],
+        default=[],
         help="Path to the training dataset. Accepted format:"
         "1) a single data path, 2) multiple datasets in the"
         "form: dataset1-path dataset2-path ...",
     )
-
     parser.add_argument(
-        "--num_train_epochs",
-        type=int,
-        default=1,
-        help="Total number of training epochs to perform.",
+        "--gradient_checkpointing",
+        action="store_true",
+        help="Enable HF gradient checkpointing for model.",
     )
 
-    parser.add_argument(
-        "--output_dir", type=str, default=None, help="Where to store the model."
+    return parser.parse_args()
+
+
+class SavePeftModelCallback(transformers.TrainerCallback):
+    def save_model(self, args, state, kwargs):
+        print("Saving PEFT checkpoint...")
+        if state.best_model_checkpoint is not None:
+            checkpoint_folder = os.path.join(
+                state.best_model_checkpoint, "adapter_model"
+            )
+        else:
+            checkpoint_folder = os.path.join(
+                args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}"
+            )
+
+        peft_model_path = os.path.join(checkpoint_folder, "adapter_model")
+        kwargs["model"].save_pretrained(peft_model_path)
+
+        pytorch_model_path = os.path.join(checkpoint_folder, "pytorch_model.bin")
+        if os.path.exists(pytorch_model_path):
+            os.remove(pytorch_model_path)
+
+    def on_save(self, args, state, control, **kwargs):
+        self.save_model(args, state, kwargs)
+        return control
+
+    def on_train_end(self, args, state, control, **kwargs):
+        def touch(fname, times=None):
+            with open(fname, "a"):
+                os.utime(fname, times)
+
+        touch(os.join(args.output_dir, "completed"))
+        self.save_model(args, state, kwargs)
+
+
+def find_all_linear_names(args, model):
+    cls = (
+        bnb.nn.Linear4bit
+        if args.quantize_mode == "4int"
+        else (bnb.nn.Linear8bitLt if args.quantize_mode == "8int" else torch.nn.Linear)
     )
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split(".")
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
 
-    args = parser.parse_args()
+    if "lm_head" in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove("lm_head")
+    return list(lora_module_names)
 
-    return args
 
+def run_training(args):
+    model_name = args.model_name
 
-class BetterXGLMAttention(nn.Module):
-    """Multi-headed attention from 'Attention Is All You Need' paper"""
-
-    def __init__(
-        self,
-        embed_dim: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        is_decoder: bool = False,
-        bias: bool = True,
-    ):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.head_dim = embed_dim // num_heads
-
-        if (self.head_dim * num_heads) != self.embed_dim:
-            raise ValueError(
-                f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
-                f" and `num_heads`: {num_heads})."
-            )
-        self.scaling = self.head_dim**-0.5
-        self.is_decoder = is_decoder
-        self.resid_dropout = nn.Dropout(self.dropout)
-
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-
-    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
-        return (
-            tensor.view(bsz, seq_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
+    if args.quantize_mode == "4bit":
+        print("4bit")
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
         )
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        layer_head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        """Input shape: Batch x Time x Channel"""
-
-        # if key_value_states are provided this layer is used as a cross-attention layer
-        # for the decoder
-        is_cross_attention = key_value_states is not None
-
-        bsz, tgt_len, _ = hidden_states.size()
-
-        # get query proj
-        query_states = self.q_proj(hidden_states)
-        # get key, value proj
-        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-        # is checking that the `sequence_length` of the `past_key_value` is the same as
-        # the provided `key_value_states` to support prefix tuning
-        if (
-            is_cross_attention
-            and past_key_value is not None
-            and past_key_value[0].shape[2] == key_value_states.shape[1]
-        ):
-            # reuse k,v, cross_attentions
-            key_states = past_key_value[0]
-            value_states = past_key_value[1]
-        elif is_cross_attention:
-            # cross_attentions
-            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-        elif past_key_value is not None:
-            # reuse k, v, self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-            key_states = torch.cat([past_key_value[0], key_states], dim=2)
-            value_states = torch.cat([past_key_value[1], value_states], dim=2)
-        else:
-            # self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-
-        if self.is_decoder:
-            past_key_value = (key_states, value_states)
-
-        query_states = self._shape(query_states, tgt_len, bsz)
-        key_states = key_states
-        value_states = value_states
-        attn_output = torch.nn.functional.scaled_dot_product_attention(
-            query_states,
-            key_states,
-            value_states,
-            attn_mask=attention_mask,
-            dropout_p=self.dropout if self.training else 0.0,
-            # is_causal=True,
+    elif args.quantize_mode == "8bit":
+        print("8bit")
+        bnb_config = BitsAndBytesConfig(
+            load_in_8bit=True,
         )
+    elif args.quantize_mode == "16bit":
+        print("16bit")
+        bnb_config = BitsAndBytesConfig()
 
-        if attn_output.size() != (bsz, self.num_heads, tgt_len, self.head_dim):
-            raise ValueError(
-                f"`attn_output` should be of size {(bsz, self.num_heads, tgt_len, self.head_dim)}, but is"
-                f" {attn_output.size()}"
-            )
-
-        attn_output = attn_output.transpose(1, 2)
-
-        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-        # partitioned aross GPUs when using tensor-parallelism.
-        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-
-        attn_output = self.out_proj(attn_output)
-        # print(attn_output)
-        return attn_output, None, past_key_value
-
-
-class XformersMemoryXGLMAttention(nn.Module):
-    """Multi-headed attention from 'Attention Is All You Need' paper"""
-
-    def __init__(
-        self,
-        embed_dim: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        is_decoder: bool = False,
-        bias: bool = True,
-    ):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.head_dim = embed_dim // num_heads
-
-        if (self.head_dim * num_heads) != self.embed_dim:
-            raise ValueError(
-                f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
-                f" and `num_heads`: {num_heads})."
-            )
-        self.scaling = self.head_dim**-0.5
-        self.is_decoder = is_decoder
-        self.resid_dropout = nn.Dropout(self.dropout)
-
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-
-    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
-        return (
-            tensor.view(bsz, seq_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        layer_head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        """Input shape: Batch x Time x Channel"""
-        # if key_value_states are provided this layer is used as a cross-attention layer
-        # for the decoder
-        is_cross_attention = key_value_states is not None
-
-        bsz, tgt_len, _ = hidden_states.size()
-
-        # get query proj
-        query_states = self.q_proj(hidden_states)
-        # get key, value proj
-        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-        # is checking that the `sequence_length` of the `past_key_value` is the same as
-        # the provided `key_value_states` to support prefix tuning
-        if (
-            is_cross_attention
-            and past_key_value is not None
-            and past_key_value[0].shape[2] == key_value_states.shape[1]
-        ):
-            # reuse k,v, cross_attentions
-            key_states = past_key_value[0]
-            value_states = past_key_value[1]
-        elif is_cross_attention:
-            # cross_attentions
-            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-        elif past_key_value is not None:
-            # reuse k, v, self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-            key_states = torch.cat([past_key_value[0], key_states], dim=2)
-            value_states = torch.cat([past_key_value[1], value_states], dim=2)
-        else:
-            # self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-
-        if self.is_decoder:
-            past_key_value = (key_states, value_states)
-
-        query_states = self._shape(query_states, tgt_len, bsz)
-        key_states = key_states
-        value_states = value_states
-
-        # attn_output = xops.memory_efficient_attention(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        #     p=self.dropout if self.training else 0,
-        #     attn_bias=xops.LowerTriangularMask(),
-        # )
-
-        attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
-        attn_output = attn_output.transpose(1, 2)
-
-        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-        # partitioned aross GPUs when using tensor-parallelism.
-        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-        attn_output = self.resid_dropout(self.out_proj(attn_output))
-        return attn_output, None, past_key_value
-
-
-class XformersFavorXGLMAttention(nn.Module):
-    """Multi-headed attention from 'Attention Is All You Need' paper"""
-
-    def __init__(
-        self,
-        embed_dim: int,
-        num_heads: int,
-        dropout: float = 0.0,
-        is_decoder: bool = False,
-        bias: bool = True,
-    ):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.head_dim = embed_dim // num_heads
-
-        if (self.head_dim * num_heads) != self.embed_dim:
-            raise ValueError(
-                f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
-                f" and `num_heads`: {num_heads})."
-            )
-        self.scaling = self.head_dim**-0.5
-        self.is_decoder = is_decoder
-        self.resid_dropout = nn.Dropout(self.dropout)
-
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-
-        # self.favor_attn = FavorAttention(
-        #     causal=True,
-        #     dropout=0.01,
-        #     dim_head=self.head_dim,
-        #     feature_map_type=FeatureMapType.SMOrf,
-        # )
-        # self.favor_attn = RandomAttention(
-        #     # causal=True,
-        #     dropout=0.01,
-        # )
-        self.favor_attn = LinformerAttention(
-            dropout=0.01,
-            seq_len=embed_dim,
-        )
-
-    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
-        return (
-            tensor.view(bsz, seq_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        layer_head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        """Input shape: Batch x Time x Channel"""
-
-        # if key_value_states are provided this layer is used as a cross-attention layer
-        # for the decoder
-        is_cross_attention = key_value_states is not None
-
-        bsz, tgt_len, _ = hidden_states.size()
-
-        # get query proj
-        query_states = self.q_proj(hidden_states)
-        # get key, value proj
-        # `past_key_value[0].shape[2] == key_value_states.shape[1]`
-        # is checking that the `sequence_length` of the `past_key_value` is the same as
-        # the provided `key_value_states` to support prefix tuning
-        if (
-            is_cross_attention
-            and past_key_value is not None
-            and past_key_value[0].shape[2] == key_value_states.shape[1]
-        ):
-            # reuse k,v, cross_attentions
-            key_states = past_key_value[0]
-            value_states = past_key_value[1]
-        elif is_cross_attention:
-            # cross_attentions
-            key_states = self._shape(self.k_proj(key_value_states), -1, bsz)
-            value_states = self._shape(self.v_proj(key_value_states), -1, bsz)
-        elif past_key_value is not None:
-            # reuse k, v, self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-            key_states = torch.cat([past_key_value[0], key_states], dim=2)
-            value_states = torch.cat([past_key_value[1], value_states], dim=2)
-        else:
-            # self_attention
-            key_states = self._shape(self.k_proj(hidden_states), -1, bsz)
-            value_states = self._shape(self.v_proj(hidden_states), -1, bsz)
-
-        if self.is_decoder:
-            past_key_value = (key_states, value_states)
-
-        query_states = self._shape(query_states, tgt_len, bsz)
-        key_states = key_states
-        value_states = value_states
-
-        # attn_output = xops.memory_efficient_attention(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        #     p=self.dropout if self.training else 0,
-        #     attn_bias=xops.LowerTriangularMask(),
-        # )
-
-        # attn_output = self.favor_attn(
-        #     query_states,
-        #     key_states,
-        #     value_states,
-        # )
-        # attn_output = self.favor_attn(
-        #     query_states, key_states, value_states, attention_mask
-        # )
-        attn_output = self.favor_attn(
-            query_states,
-            key_states,
-            value_states,
-        )
-        attn_output = attn_output.view(bsz, self.num_heads, tgt_len, self.head_dim)
-        attn_output = attn_output.transpose(1, 2)
-
-        # Use the `embed_dim` from the config (stored in the class) rather than `hidden_state` because `attn_output` can be
-        # partitioned aross GPUs when using tensor-parallelism.
-        attn_output = attn_output.reshape(bsz, tgt_len, self.embed_dim)
-        attn_output = self.resid_dropout(self.out_proj(attn_output))
-        return attn_output, None, past_key_value
-
-
-# transformers.models.xglm.modeling_xglm.XGLMAttention = BetterXGLMAttention
-# transformers.models.xglm.modeling_xglm.XGLMAttention = XformersMemoryXGLMAttention
-# transformers.models.xglm.modeling_xglm.XGLMAttention = XformersFavorXGLMAttention
-
-if __name__ == "__main__":
-    os.environ["WANDB_PROJECT"] = "rulm_self_instruct"
-    args = parse_args()
-
-    # model_name = "facebook/xglm-7.5B"
-    model_name = "facebook/xglm-4.5B"
-    # model_name = "facebook/xglm-1.7B"
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        load_in_8bit=True,
+        quantization_config=bnb_config,
+        # device_map={"": Accelerator().process_index},
         device_map="auto",
-        # torch_dtype=torch.float16,
+        trust_remote_code=True,
+        # torch_dtype=torch.float16
     )
-    # model.cuda()
-    # model.half()
-    # model = BetterTransformer.transform(model)
-    # model.gradient_checkpointing_enable()
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # model.config.use_cache = False
 
-    model = prepare_model_for_int8_training(model)
-
-    def print_trainable_parameters(model):
-        """
-        Prints the number of trainable parameters in the model.
-        """
-        trainable_params = 0
-        all_param = 0
-        for _, param in model.named_parameters():
-            all_param += param.numel()
-            if param.requires_grad:
-                trainable_params += param.numel()
-        print(
-            f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+    if getattr(model, "is_loaded_in_8bit", False) or getattr(
+        model, "is_loaded_in_4bit", False
+    ):
+        print("prepare_model_for_kbit_training")
+        model = prepare_model_for_kbit_training(
+            model, use_gradient_checkpointing=args.gradient_checkpointing
         )
 
-    config = LoraConfig(
-        r=16,
-        lora_alpha=32,
-        target_modules=["q_proj", "v_proj"],
-        lora_dropout=0.05,
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
+    if args.gradient_checkpointing:
+        model.gradient_checkpointing_enable()
 
-    model = get_peft_model(model, config)
-    print_trainable_parameters(model)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    tokenizer.pad_token = tokenizer.eos_token
 
     train_dataset, eval_dataset = create_prompt_dataset_v2(
-        datasets_names=args.data_path,
+        datasets_names=args.datasets,
         tokenizer=tokenizer,
-        max_seq_len=1024,
+        max_seq_len=args.max_seq_len,
         output_path="./datasets/",
-        seed=42,
+        seed=1234,
     )
-
-    data_collator_pad = transformers.DataCollatorWithPadding(
+    data_collator_pad = DataCollatorForSeq2Seq(
         tokenizer=tokenizer,
+        padding=True,
+        max_length=args.max_seq_len,
+        return_tensors="pt",
     )
 
     def collator(x):
-        features_map = {key: [] for key in x[0].keys()}
-        for item in x:
-            for key in item.keys():
-                features_map[key].append(item[key])
-
-        del features_map["labels"]
-        features_map = data_collator_pad(features_map)
-        features_map["labels"] = features_map["input_ids"]
+        features_map = data_collator_pad(x)
         return features_map
 
-    trainer = transformers.Trainer(
+    lora_alpha = 16
+    lora_dropout = 0.1
+    lora_r = 64
+
+    modules = find_all_linear_names(args, model)
+
+    peft_config = LoraConfig(
+        lora_alpha=lora_alpha,
+        lora_dropout=lora_dropout,
+        r=lora_r,
+        bias="none",
+        task_type="CAUSAL_LM",
+        # target_modules=[
+        #     # "k_proj",
+        #     # "v_proj",
+        #     # "q_proj",
+        #     # "out_proj",
+        #     # "fc1",
+        #     # "fc2",
+        # ],
+        target_modules=modules,
+    )
+    model = get_peft_model(model, peft_config)
+
+    for name, module in model.named_modules():
+        if "norm" in name:
+            module = module.to(torch.float32)
+
+    per_device_train_batch_size = args.batch_size_per_device
+    gradient_accumulation_steps = 1
+    gradient_checkpointing = args.gradient_checkpointing
+    optim = "adamw_bnb_8bit"
+    save_steps = args.save_steps
+    logging_steps = 10
+    learning_rate = 2e-4
+    max_grad_norm = 0.3
+    max_steps = args.max_steps
+    warmup_ratio = 0.03
+    lr_scheduler_type = "constant"
+
+    training_arguments = TrainingArguments(
+        output_dir=args.output_dir,
+        per_device_train_batch_size=per_device_train_batch_size,
+        per_device_eval_batch_size=per_device_train_batch_size,
+        gradient_accumulation_steps=gradient_accumulation_steps,
+        gradient_checkpointing=gradient_checkpointing,
+        optim=optim,
+        save_steps=save_steps,
+        logging_steps=logging_steps,
+        learning_rate=learning_rate,
+        fp16=True,
+        max_grad_norm=max_grad_norm,
+        max_steps=max_steps,
+        warmup_ratio=warmup_ratio,
+        lr_scheduler_type=lr_scheduler_type,
+        report_to="wandb",
+    )
+    print(training_arguments)
+
+    trainer = Trainer(
         model=model,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        args=transformers.TrainingArguments(
-            per_device_train_batch_size=4,
-            gradient_accumulation_steps=8,
-            warmup_steps=0,
-            learning_rate=2e-4,
-            fp16=True,
-            # bf16=True,
-            logging_steps=1,
-            output_dir=args.output_dir,
-            optim="adamw_bnb_8bit",
-            # optim="adamw_torch",
-            # optim="adagrad",
-            # optim="sgd",
-            evaluation_strategy="epoch",
-            save_strategy="epoch",
-            # в половину ускоряет тренировку
-            tf32=True,
-            report_to="wandb",
-            num_train_epochs=args.num_train_epochs,
-            # max_steps=5000,
-        ),
+        tokenizer=tokenizer,
+        args=training_arguments,
         data_collator=collator,
     )
-    model.config.use_cache = False
+    trainer.add_callback(SavePeftModelCallback)
+
+    for name, module in trainer.model.named_modules():
+        if "norm" in name:
+            module = module.to(torch.float32)
+
     trainer.train()
-    # slow int8 multiplication
+
+
+def main(args):
+    run_training(args)
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

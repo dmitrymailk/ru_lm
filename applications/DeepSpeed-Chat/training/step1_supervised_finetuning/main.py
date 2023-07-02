@@ -31,6 +31,7 @@ import deepspeed
 from deepspeed.ops.adam import FusedAdam
 import wandb
 
+
 # from deepspeed.
 
 sys.path.append(
@@ -58,6 +59,23 @@ from utils.model.model_utils import create_hf_model
 from typing import List, Optional, Tuple
 
 import torch
+
+
+def find_all_linear_names(args, model):
+    cls = (
+        bnb.nn.Linear4bit
+        if args.bits == 4
+        else (bnb.nn.Linear8bitLt if args.bits == 8 else torch.nn.Linear)
+    )
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split(".")
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+
+    if "lm_head" in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove("lm_head")
+    return list(lora_module_names)
 
 
 def parse_args():
@@ -215,6 +233,7 @@ def main():
             "type": "AdamW",
             "params": {
                 "lr": 3e-6,
+                # "lr": 3e-10,
                 "betas": [0.9, 0.95],
                 "eps": 1e-8,
                 "weight_decay": 0.0,
@@ -322,28 +341,6 @@ def main():
             torch_dtype=torch.float16,
         )
 
-    learn_params = [
-        # "bias",
-        # *[str(num) for num in range(29, 32)],
-        # "0"
-        # "fc",
-        # "bias",
-        # "v_proj",
-        # "k_proj",
-        # "q_proj",
-        # "out_proj",
-        # "layer_norm",
-        "31",
-    ]
-    print_rank_0(learn_params)
-    for name, param in model.named_parameters():
-        name = str(name)
-        print_rank_0(name)
-
-        for learn_param in learn_params:
-            if not learn_param in name and "layers" in name:
-                param.requires_grad = False
-
     # model = torch.compile(model)
 
     if args.local_rank == 0:
@@ -441,7 +438,7 @@ def main():
     if args.global_rank == 0:
         wandb.log({"eval_ppl": perplexity})
     torch.distributed.barrier()
-
+    zero_stage = ds_config["zero_optimization"]["stage"]
     checkpoint_steps = len(train_dataloader) // 5
     print_rank_0("***** Checkpoint save steps *****", checkpoint_steps)
     for epoch in range(args.num_train_epochs):
@@ -455,8 +452,8 @@ def main():
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss
-            if args.global_rank == 0:
-                print(loss.item())
+            # if args.global_rank == 0:
+            #     print(loss.item())
             model.backward(loss)
             model.step()
             if (step + 1) % checkpoint_steps == 0:
@@ -470,11 +467,12 @@ def main():
                 if args.global_rank == 0:
                     save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
 
-                if args.zero_stage == 3:
+                if zero_stage == 3:
                     # For zero stage 3, each gpu only has a part of the model, so we need a special save function
                     os.makedirs(output_dir, exist_ok=True)
+
                     save_zero_three_model(
-                        model, args.global_rank, output_dir, zero_stage=args.zero_stage
+                        model, args.global_rank, output_dir, zero_stage=zero_stage
                     )
 
         torch.distributed.barrier()
@@ -487,11 +485,11 @@ def main():
         if args.global_rank == 0:
             save_hf_format(model, tokenizer, args, sub_folder=sub_folder)
 
-        if args.zero_stage == 3:
+        if zero_stage == 3:
             # For zero stage 3, each gpu only has a part of the model, so we need a special save function
             os.makedirs(output_dir, exist_ok=True)
             save_zero_three_model(
-                model, args.global_rank, output_dir, zero_stage=args.zero_stage
+                model, args.global_rank, output_dir, zero_stage=zero_stage
             )
 
         # Evaluate perplexity on the validation set.
@@ -504,19 +502,6 @@ def main():
         if args.global_rank == 0:
             wandb.log({"eval_ppl": perplexity})
         model.tput_timer.update_epoch_count()
-
-    if args.output_dir is not None:
-        print_rank_0("saving the final model ...", args.global_rank)
-        model = convert_lora_to_linear_layer(model)
-
-        if args.global_rank == 0:
-            save_hf_format(model, tokenizer, args)
-
-        if args.zero_stage == 3:
-            # For zero stage 3, each gpu only has a part of the model, so we need a special save function
-            save_zero_three_model(
-                model, args.global_rank, args.output_dir, zero_stage=args.zero_stage
-            )
 
 
 if __name__ == "__main__":
