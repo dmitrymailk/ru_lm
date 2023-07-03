@@ -110,7 +110,7 @@ def parse_args():
         default="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/test",
         help="Where to store the model.",
     )
-    
+
     parser.add_argument(
         "--seed", type=int, default=1234, help="A seed for reproducible training."
     )
@@ -150,13 +150,15 @@ def main():
     model_name = args.model_name
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        # load_in_4bit=True,
-        # load_in_8bit=True,
+        load_in_4bit=args.bits == 4,
+        load_in_8bit=args.bits == 8,
         device_map="auto",
         # torch_dtype=torch.float16,
         torch_dtype=torch.bfloat16,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # Fixing broken tokenizers
+    tokenizer.pad_token = tokenizer.eos_token
 
     data_path = args.datasets
     max_seq_len = args.max_seq_len
@@ -184,18 +186,25 @@ def main():
 
     # prepare for lora int8 train
     model = prepare_model_for_kbit_training(model)
-    lora_r = 32
+    lora_r = 16
     lora_alpha = 16
     lora_target_modules = [
+        # "q_proj",
+        # "v_proj",
+        # # "k_proj",
+        # # "out_proj",
+        # # "fc1",
+        # # "fc2",
         "q_proj",
+        "gate_proj",
+        "up_proj",
+        "o_proj",
         "v_proj",
-        # "k_proj",
-        # "out_proj",
-        # "fc1",
-        # "fc2",
+        "k_proj",
+        "down_proj",
     ]
     # lora_target_modules = find_all_linear_names(args=args, model=model)
-    lora_dropout = 0.0
+    lora_dropout = 0.05
 
     config = LoraConfig(
         r=lora_r,

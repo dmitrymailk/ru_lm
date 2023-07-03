@@ -635,7 +635,7 @@ def create_prompt_dataset_v2(
             for stage in ["train", "test"]:
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
-                        lambda x: prepare_dataset_v4(
+                        lambda x: prepare_dataset_v3(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
@@ -650,7 +650,7 @@ def create_prompt_dataset_v2(
                     train_datasets.append(train_data)
                 else:
                     eval_data = dataset.get_eval_data().map(
-                        lambda x: prepare_dataset_v4(
+                        lambda x: prepare_dataset_v3(
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
