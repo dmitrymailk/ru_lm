@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 export CUDA_VISIBLE_DEVICES=1,2,3
 export WANDB_BASE_URL="https://api.wandb.ai"
+export WANDB_PROJECT="lora_self_instruct"
 # DeepSpeed Team
 OUTPUT=$1
 if [ "$OUTPUT" == "" ]; then
