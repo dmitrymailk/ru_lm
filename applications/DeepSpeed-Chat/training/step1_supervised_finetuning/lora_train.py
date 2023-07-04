@@ -189,19 +189,18 @@ def main():
     lora_r = 16
     lora_alpha = 16
     lora_target_modules = [
-        # "q_proj",
-        # "v_proj",
-        # # "k_proj",
-        # # "out_proj",
-        # # "fc1",
-        # # "fc2",
         "q_proj",
-        "gate_proj",
-        "up_proj",
-        "o_proj",
         "v_proj",
-        "k_proj",
-        "down_proj",
+        # "k_proj",
+        # "out_proj",
+        # llama
+        # "q_proj",
+        # "gate_proj",
+        # "up_proj",
+        # "o_proj",
+        # "v_proj",
+        # "k_proj",
+        # "down_proj",
     ]
     # lora_target_modules = find_all_linear_names(args=args, model=model)
     lora_dropout = 0.05
@@ -254,7 +253,6 @@ def main():
     # везде можно заметить данную строчку, но согласно данному ответу этот параметр используется
     # только для генерации
     model.config.use_cache = False
-    # if torch.__version__ >= "2" and sys.platform != "win32":
 
     print("Start train")
     trainer.train()
