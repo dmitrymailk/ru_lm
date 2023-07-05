@@ -1,5 +1,5 @@
 export WANDB_PROJECT=lora_self_instruct
-# export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=3
 OUTPUT=$1
 if [ "$OUTPUT" == "" ]; then
     exit
