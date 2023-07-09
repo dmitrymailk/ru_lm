@@ -21,15 +21,19 @@
         "lora_alpha": 16,
         "lora_dropout": 0.05,
         "bias": "none",
-        "target_modules": ["q_proj", "v_proj", "k_proj", "o_proj"],
+        "target_modules": [
+            "q_proj",
+            "v_proj",
+            "k_proj",
+            "o_proj"
+        ],
         "task_type": "CAUSAL_LM"
     },
     "load_in_8bit": true,
     "only_target_loss": true,
     "mode": "chat",
     "templates_path": "internal_prompts/saiga_v2.json",
-    "model_name": "models/llama-7b",
+    "model_name": "huggyllama/llama-7b",
     "model_type": "causal",
     "max_tokens_count": 2000
 }
-
