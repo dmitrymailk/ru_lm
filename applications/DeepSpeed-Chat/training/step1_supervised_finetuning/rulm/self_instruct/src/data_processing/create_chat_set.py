@@ -4,6 +4,7 @@ import re
 import random
 from datasets import load_dataset
 from tqdm import tqdm
+from itertools import tee
 
 from datasketch import MinHash, MinHashLSH, LeanMinHash
 
@@ -34,26 +35,19 @@ def build_char_system_messages(char):
     chat = []
     if random.random() < 0.2:
         context += f"\nПриветствие: {greeting}"
-        chat.append({
-            "role": "bot",
-            "content": greeting
-        })
+        chat.append({"role": "bot", "content": greeting})
     if random.random() < 0.2:
-        mapping = {
-            "user": "Пользователь",
-            "char": "Персонаж"
-        }
-        example_messages = [f'{mapping[m["role"]]}: {m["content"]}' for m in example_dialogue]
+        mapping = {"user": "Пользователь", "char": "Персонаж"}
+        example_messages = [
+            f'{mapping[m["role"]]}: {m["content"]}' for m in example_dialogue
+        ]
         context += "\nПример диалога:\n" + "\n".join(example_messages)
-    chat.insert(0, {
-        "role": "system",
-        "content": context
-    })
+    chat.insert(0, {"role": "system", "content": context})
     return chat
 
 
 def re_tokenize(text):
-    return re.findall(r'[а-яё-]+|[a-z-]+|\d+|\S', text, re.I)
+    return re.findall(r"[а-яё-]+|[a-z-]+|\d+|\S", text, re.I)
 
 
 def ngrams(sequence, n):
@@ -68,7 +62,7 @@ def calc_fingerprint(text, ngram_size: int = 1, num_perm: int = 128):
     tokens = re_tokenize(text)
     if ngram_size > 1:
         tokens = {" ".join(t) for t in ngrams(tokens, ngram_size)}
-    tokens = [token.encode('utf-8') for token in tokens]
+    tokens = [token.encode("utf-8") for token in tokens]
 
     minhash = MinHash(num_perm=num_perm)
     minhash.update_batch(tokens)
@@ -80,14 +74,15 @@ def calc_fingerprint(text, ngram_size: int = 1, num_perm: int = 128):
     return buf
 
 
-def undup_alpaca(alpaca_records, num_perm: int = 32, threshold: float = 0.3, debug: bool = False):
+def undup_alpaca(
+    alpaca_records, num_perm: int = 32, threshold: float = 0.3, debug: bool = False
+):
     for record in tqdm(alpaca_records, desc="Fingerprinting"):
-        record["minhash"] = calc_fingerprint(record["messages"][0]["content"], num_perm=num_perm)
+        record["minhash"] = calc_fingerprint(
+            record["messages"][0]["content"], num_perm=num_perm
+        )
 
-    lsh = MinHashLSH(
-        threshold=threshold,
-        num_perm=num_perm
-    )
+    lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
 
     filtered_records = []
     for idx, record in tqdm(enumerate(alpaca_records), desc="Undup"):
@@ -125,29 +120,35 @@ def main(train_path, val_path):
             continue
         if has_bad_ss([{"content": output}]):
             continue
-        instruct_records.append({
-            "messages": [
-                {"role": "user", "content": message},
-                {"role": "bot", "content": output}
-            ],
-            "source": "gpt4"
-        })
+        instruct_records.append(
+            {
+                "messages": [
+                    {"role": "user", "content": message},
+                    {"role": "bot", "content": output},
+                ],
+                "source": "gpt4",
+            }
+        )
     print("Instruct gpt4 count:", len(instruct_records))
     print("Instruct gpt4 length:", calc_max_length(instruct_records))
 
     evol_records = []
-    for row in tqdm(load_dataset("IlyaGusev/ru_turbo_alpaca_evol_instruct", split="train")):
+    for row in tqdm(
+        load_dataset("IlyaGusev/ru_turbo_alpaca_evol_instruct", split="train")
+    ):
         instruction = row["instruction"]
         output = row["output"]
         if has_bad_ss([{"content": output}]):
             continue
-        evol_records.append({
-            "messages": [
-                {"role": "user", "content": instruction},
-                {"role": "bot", "content": output}
-            ],
-            "source": "alpaca-evol-instruct"
-        })
+        evol_records.append(
+            {
+                "messages": [
+                    {"role": "user", "content": instruction},
+                    {"role": "bot", "content": output},
+                ],
+                "source": "alpaca-evol-instruct",
+            }
+        )
     print("Evol-instruct count:", len(evol_records))
     print("Max evol-instruct length:", calc_max_length(evol_records))
 
@@ -161,13 +162,15 @@ def main(train_path, val_path):
             output = row["output"]
             if has_bad_ss([{"content": output}]):
                 continue
-        alpaca_records.append({
-            "messages": [
-                {"role": "user", "content": message},
-                {"role": "bot", "content": output}
-            ],
-            "source": "alpaca"
-        })
+        alpaca_records.append(
+            {
+                "messages": [
+                    {"role": "user", "content": message},
+                    {"role": "bot", "content": output},
+                ],
+                "source": "alpaca",
+            }
+        )
     print("Alpaca count:", len(alpaca_records))
     print("Max Alpaca length:", calc_max_length(alpaca_records))
 
@@ -179,10 +182,7 @@ def main(train_path, val_path):
         messages = revert_flattening(row["messages"])
         if has_bad_ss(messages):
             continue
-        saiga_records.append({
-            "messages": messages,
-            "source": "saiga"
-        })
+        saiga_records.append({"messages": messages, "source": "saiga"})
     print("Saiga count:", len(saiga_records))
     print("Max Saiga length:", calc_max_length(saiga_records))
 
@@ -197,10 +197,9 @@ def main(train_path, val_path):
             prev_record_idx = idx
             continue
         messages = instruct_records[prev_record_idx]["messages"] + record["messages"]
-        merged_instruct_records.append({
-            "messages": messages,
-            "source": "merged_instruct"
-        })
+        merged_instruct_records.append(
+            {"messages": messages, "source": "merged_instruct"}
+        )
         prev_record_idx = None
     print("Merged instruct count:", len(merged_instruct_records))
     print("Max Merged instruct length:", calc_max_length(merged_instruct_records))
@@ -230,10 +229,7 @@ def main(train_path, val_path):
             text_length = sum([len(m["content"]) for m in messages])
         if not messages:
             continue
-        records.append({
-            "messages": messages,
-            "source": "sharegpt"
-        })
+        records.append({"messages": messages, "source": "sharegpt"})
     print("Saiga + Alpaca + ShareGPT count:", len(records))
     print("Saiga + Alpaca + ShareGPT max length:", calc_max_length(records))
 
@@ -245,10 +241,7 @@ def main(train_path, val_path):
             text_length = sum([len(m["content"]) for m in messages])
         if not messages:
             continue
-        records.append({
-            "messages": messages,
-            "source": "oasst"
-        })
+        records.append({"messages": messages, "source": "oasst"})
 
     rp_records = []
     for row in tqdm(load_dataset("IlyaGusev/gpt_roleplay_realm", split="ru")):
@@ -266,10 +259,7 @@ def main(train_path, val_path):
 
             system_messages = build_char_system_messages(row)
             chat = system_messages + chat
-            rp_records.append({
-                "messages": chat,
-                "source": "roleplay"
-            })
+            rp_records.append({"messages": chat, "source": "roleplay"})
     print("Roleplay count:", len(rp_records))
     records += rp_records
 
