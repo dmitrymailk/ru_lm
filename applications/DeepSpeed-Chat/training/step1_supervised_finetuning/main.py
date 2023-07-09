@@ -264,7 +264,7 @@ def main():
         # "zero_optimization": {
         #     "stage": 0,
         # },
-        "gradient_accumulation_steps": 8,
+        "gradient_accumulation_steps": 32,
         "gradient_clipping": 1.0,
         "steps_per_print": 100,
         "train_batch_size": 16,

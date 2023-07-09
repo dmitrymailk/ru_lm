@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-export CUDA_VISIBLE_DEVICES=1,2,3
+# export CUDA_VISIBLE_DEVICES=1,2,3
 export WANDB_BASE_URL="https://api.wandb.ai"
 export WANDB_PROJECT="lora_self_instruct"
 # DeepSpeed Team
@@ -23,8 +23,8 @@ export WANDB_NAME=$OUTPUT
 #    --tokenizer_path facebook/xglm-4.5B \
 nohup deepspeed main.py \
    --data_path chip2_instruct_alpha_prompt_en_v2_clean_v2 chip2_instruct_alpha_prompt_ru_v2_clean_v1 dolly_original_prompt_v2_clean_v1 dolly_translated_prompt_v2_clean_v1 openass_prompt_dataset_en_v2_clean_v2 openass_prompt_dataset_ru_v2_clean_v1 \
-   --model_name_or_path facebook/xglm-7.5B \
-   --tokenizer_path facebook/xglm-7.5B \
+   --model_name_or_path facebook/xglm-4.5B \
+   --tokenizer_path facebook/xglm-4.5B \
    --per_device_train_batch_size 4 \
    --per_device_eval_batch_size 4 \
    --max_seq_len 2048 \
