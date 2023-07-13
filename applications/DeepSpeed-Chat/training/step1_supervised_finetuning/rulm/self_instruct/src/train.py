@@ -2,6 +2,7 @@ import argparse
 import random
 import json
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 import wandb
 import torch
