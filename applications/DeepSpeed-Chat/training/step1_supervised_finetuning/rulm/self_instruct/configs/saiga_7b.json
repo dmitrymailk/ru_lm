@@ -14,7 +14,8 @@
         "fp16": true,
         "bf16": false,
         "torch_compile": false,
-        "optim": "adamw_torch"
+        "optim": "adamw_torch",
+        "max_steps": 5000
     },
     "lora": {
         "r": 16,
@@ -31,7 +32,7 @@
     },
     "load_in_8bit": true,
     "only_target_loss": true,
-    "mode": "chat",
+    "mode": "custom_chat",
     "templates_path": "internal_prompts/saiga_v2.json",
     "model_name": "huggyllama/llama-7b",
     "model_type": "causal",

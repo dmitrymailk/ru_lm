@@ -593,6 +593,96 @@ def prepare_dataset_v4(
     }
 
 
+def convert_prompt_saiga_version_v1(prompt: str):
+    prompt = prompt.replace("Human:", " </s> \n <s> user")
+    prompt = prompt.replace("Assistant:", " </s>\n <s> bot")
+    prompt = prompt.strip()[6:]
+    prompt += " </s>"
+    default_system_prompt = """<s> system \nТы — Горал, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им. </s>\n"""
+    prompt = default_system_prompt + prompt
+    return prompt
+
+
+def encode_prompt_saiga_v1(
+    prompt: str,
+    tokenizer,
+    start_token_id=1,
+    end_token_id=2,
+    bot_token_id=9225,
+):
+    tokenized = tokenizer(prompt, add_special_tokens=False)
+    input_ids = tokenized["input_ids"]
+    input_ids.insert(0, tokenizer.bos_token_id)
+    input_ids = torch.LongTensor(input_ids)
+    labels = input_ids.clone()
+    attention_mask = input_ids.new_ones(input_ids.size())
+
+    start_token_id = start_token_id
+    end_token_id = end_token_id
+    bot_token_id = bot_token_id
+
+    spans = []
+    cur_start_idx = -1
+    cur_end_idx = -1
+    cur_is_bot = False
+
+    input_ids = input_ids.tolist()
+    while True:
+        try:
+            cur_start_idx = input_ids.index(start_token_id, cur_start_idx + 1)
+            cur_end_idx = input_ids.index(end_token_id, cur_start_idx + 1) + 1
+            cur_is_bot = input_ids[cur_start_idx:cur_end_idx].count(bot_token_id) >= 1
+            if not cur_is_bot:
+                spans.append((cur_start_idx, cur_end_idx))
+        except ValueError:
+            break
+
+    for start_idx, end_idx in spans:
+        start_idx = max(0, start_idx)
+        end_idx = min(len(input_ids), end_idx)
+        labels[start_idx:end_idx] = -100
+
+    if (labels == start_token_id).sum() == 0:
+        assert False, prompt
+
+    assert (labels == start_token_id).sum() == (labels == end_token_id).sum(), prompt
+    assert (labels == bot_token_id).sum() >= (labels == start_token_id).sum(), prompt
+
+    input_ids = torch.LongTensor(input_ids)
+
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "labels": labels,
+    }
+
+
+def prepare_dataset_v5(
+    prompt_func,
+    example,
+    tokenizer,
+    max_seq_len=2048,
+):
+    formated_prompt = prompt_func(example)
+    formated_prompt = convert_prompt_saiga_version_v1(prompt=formated_prompt)
+    prompt = encode_prompt_saiga_v1(
+        prompt=formated_prompt,
+        tokenizer=tokenizer,
+    )
+
+    return {
+        "input_ids": prompt["input_ids"][:max_seq_len],
+        "attention_mask": prompt["attention_mask"][:max_seq_len],
+        "labels": prompt["labels"][:max_seq_len],
+    }
+
+
+PREPARE_FUNC = {
+    "v4": prepare_dataset_v4,
+    "v5": prepare_dataset_v5,
+}
+
+
 def create_prompt_dataset_v2(
     datasets_names: list = None,
     tokenizer=None,
@@ -600,6 +690,7 @@ def create_prompt_dataset_v2(
     output_path: str = "./datasets",
     seed: int = 1234,
     local_rank: int = 0,
+    prepare_dataset_version="v4",
 ):
     # loading script for only one node
     os.makedirs(output_path, exist_ok=True)
@@ -635,7 +726,7 @@ def create_prompt_dataset_v2(
             for stage in ["train", "test"]:
                 if stage == "train":
                     train_data = dataset.get_train_data().map(
-                        lambda x: prepare_dataset_v4(
+                        lambda x: PREPARE_FUNC[prepare_dataset_version](
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
@@ -650,7 +741,7 @@ def create_prompt_dataset_v2(
                     train_datasets.append(train_data)
                 else:
                     eval_data = dataset.get_eval_data().map(
-                        lambda x: prepare_dataset_v4(
+                        lambda x: PREPARE_FUNC[prepare_dataset_version](
                             prompt_func=dataset.get_prompt_and_chosen,
                             example=x,
                             tokenizer=tokenizer,
