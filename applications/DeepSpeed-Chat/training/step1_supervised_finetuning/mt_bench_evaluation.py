@@ -6,16 +6,25 @@ from tqdm import tqdm
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import torch
-from instruct_models import SaigaConversation, generate
+from instruct_models import SaigaConversation, generate, GoralConversation
 
 
-def eval_saiga7b():
+def eval_saiga_based(
+    weights_path=None,
+    tokenizer_path=None,
+    output_save_path=None,
+    conversation_class=None,
+):
+    assert weights_path
+    assert tokenizer_path
+    assert output_save_path
+
     mt_bench_en = load_dataset("dim/mt_bench_en")
     mt_bench_en = mt_bench_en["train"]
     mt_bench_en = mt_bench_en.to_list()
 
-    weights_path = "IlyaGusev/saiga_7b_lora"
-    tokenizer_path = "IlyaGusev/saiga_7b_lora"
+    # weights_path = "IlyaGusev/saiga_7b_lora"
+    # tokenizer_path = "IlyaGusev/saiga_7b_lora"
 
     config = PeftConfig.from_pretrained(weights_path)
     model = AutoModelForCausalLM.from_pretrained(
@@ -36,7 +45,7 @@ def eval_saiga7b():
     print("Test generation")
     print("***")
     inp = "Почему трава зеленая?"
-    conversation = SaigaConversation()
+    conversation = conversation_class()
     conversation.add_user_message(inp)
     prompt = conversation.get_prompt(tokenizer)
 
@@ -48,10 +57,8 @@ def eval_saiga7b():
 
     for i in tqdm(range(len(mt_bench_en))):
         # print(item)
-        if i > 2:
-            break
         item = mt_bench_en[i]
-        conversation = SaigaConversation()
+        conversation = conversation_class()
         mt_bench_en[i]["replies"] = []
         for turn in item["turns"]:
             print(turn)
@@ -67,12 +74,17 @@ def eval_saiga7b():
         print("=" * 100)
 
     with open(
-        f"./datasets/final_evaluation_datasets/mt_bench/mt_bench_en_saiga_7b_en.json",
+        output_save_path,
         "w",
         encoding="utf-8",
     ) as outfile:
         json.dump(mt_bench_en, outfile)
 
 
-if __name__ == '__main__':
-    eval_saiga7b()
+if __name__ == "__main__":
+    eval_saiga_based(
+        weights_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/saiga_7b_v2/checkpoint-4850/adapter_model",
+        tokenizer_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/saiga_7b_v2",
+        output_save_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_saiga_7b_v2.json",
+        conversation_class=GoralConversation,
+    )
