@@ -3,7 +3,7 @@ import random
 import json
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 import wandb
 import torch
@@ -37,7 +37,9 @@ os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+)
 # print(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
 from utils.data.data_utils import create_prompt_dataset_v2
 
@@ -129,7 +131,8 @@ def train(
     model_name = config["model_name"]
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    tokenizer = fix_tokenizer(tokenizer)
+    if not "xglm" in model_name.lower():
+        tokenizer = fix_tokenizer(tokenizer)
     tokenizer.save_pretrained(output_dir)
 
     train_records = read_jsonl(train_file)
@@ -202,6 +205,7 @@ def train(
             max_seq_len=2048,
             output_path=output_path,
             seed=seed,
+            # prepare_dataset_version="v7",
             prepare_dataset_version="v5",
         )
     else:
@@ -224,13 +228,16 @@ def train(
     model_types = {"causal": AutoModelForCausalLM, "seq2seq": AutoModelForSeq2SeqLM}
     load_in_8bit = bool(config.get("load_in_8bit", False))
     load_in_4bit = bool(config.get("load_in_4bit", False))
+
     if load_in_8bit:
         assert not load_in_4bit
         model = model_types[model_type].from_pretrained(
             model_name, load_in_8bit=True, device_map=device_map
         )
-        model = fix_model(model, tokenizer, use_resize=False)
+        if not "xglm" in model_name.lower() and not "ama-2" in model_name.lower():
+            model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_int8_training(model)
+
     elif load_in_4bit:
         assert not load_in_8bit
         use_bf16 = trainer_config.get("bf16", False)
@@ -264,8 +271,8 @@ def train(
     )
 
     # if not ddp and torch.cuda.device_count() > 1:
-    model.is_parallelizable = True
-    model.model_parallel = True
+    # model.is_parallelizable = True
+    # model.model_parallel = True
 
     if lora_config:
         lora_config = LoraConfig(**lora_config)

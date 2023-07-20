@@ -1,9 +1,9 @@
 {
     "trainer": {
         "evaluation_strategy": "steps",
-        "per_device_train_batch_size": 4,
-        "per_device_eval_batch_size": 4,
-        "gradient_accumulation_steps": 32,
+        "per_device_train_batch_size": 2,
+        "per_device_eval_batch_size": 2,
+        "gradient_accumulation_steps": 64,
         "eval_steps": 50,
         "save_steps": 50,
         "logging_steps": 5,
@@ -34,7 +34,7 @@
     "only_target_loss": true,
     "mode": "custom_chat",
     "templates_path": "internal_prompts/saiga_v2.json",
-    "model_name": "huggyllama/llama-7b",
+    "model_name": "NousResearch/Llama-2-7b-hf",
     "model_type": "causal",
     "max_tokens_count": 2000
 }

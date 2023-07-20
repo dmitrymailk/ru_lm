@@ -70,7 +70,7 @@ python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurren
 
 e.g.,
 ```
-python gen_judgment.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-v1 gpt-3.5-turbo gpt-4 --parallel 2
+python gen_judgment.py --model-list gpt-3.5-turbo --mode single 
 ```
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 
