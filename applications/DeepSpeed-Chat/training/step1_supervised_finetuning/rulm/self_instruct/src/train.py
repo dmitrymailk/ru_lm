@@ -16,6 +16,7 @@ from transformers import (
     AutoModelForCausalLM,
     DataCollatorForTokenClassification,
     DataCollatorForSeq2Seq,
+    AutoConfig,
 )
 from transformers import (
     Trainer,
@@ -229,12 +230,24 @@ def train(
     load_in_8bit = bool(config.get("load_in_8bit", False))
     load_in_4bit = bool(config.get("load_in_4bit", False))
 
+    model = None
     if load_in_8bit:
         assert not load_in_4bit
-        model = model_types[model_type].from_pretrained(
-            model_name, load_in_8bit=True, device_map=device_map
-        )
-        if not "xglm" in model_name.lower() and not "ama-2" in model_name.lower():
+        if not "ama-2" in model_name.lower():
+            model = model_types[model_type].from_pretrained(
+                model_name, load_in_8bit=True, device_map=device_map
+            )
+        else:
+            # Experimental feature. Tensor parallelism rank used during pretraining.
+            config = AutoConfig.from_pretrained(model_name, pretraining_tp=1)
+            model = model_types[model_type].from_pretrained(
+                model_name,
+                load_in_8bit=True,
+                device_map=device_map,
+                config=config,
+            )
+
+        if not "xglm" in model_name.lower():
             model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_int8_training(model)
 
