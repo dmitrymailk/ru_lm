@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=3
 export WANDB_BASE_URL="https://api.wandb.ai"
 
 OUTPUT=$1
