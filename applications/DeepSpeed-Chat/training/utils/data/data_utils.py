@@ -605,7 +605,7 @@ def convert_prompt_saiga_version_v1(prompt: str):
 
 def convert_prompt_saiga_version_v2(prompt: str):
     prompt = prompt.replace("Human:", " </s> \n <s> user")
-    prompt = prompt.replace("Assistant:", " </s>\n <s> бот")
+    prompt = prompt.replace("Assistant:", " </s>\n <s> bot")
     prompt = prompt.strip()[6:]
     prompt += " </s>"
     default_system_prompt = """<s> system \nТы — Горал, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им. </s>\n"""
@@ -695,15 +695,12 @@ def encode_prompt_v2(
         try:
             cur_start_idx = input_ids.index(start_token_id, cur_start_idx + 1)
             cur_end_idx = input_ids.index(end_token_id, cur_start_idx + 1) + 1
-            for num_bot in bot_token_id:
-                cur_is_bot = input_ids[cur_start_idx:cur_end_idx].count(num_bot) >= 1
-                if cur_is_bot:
-                    break
+            cur_is_bot = input_ids[cur_start_idx:cur_end_idx].count(bot_token_id) >= 1
             if not cur_is_bot:
                 spans.append((cur_start_idx, cur_end_idx))
         except ValueError:
             break
-
+    # print(spans)
     for start_idx, end_idx in spans:
         start_idx = max(0, start_idx)
         end_idx = min(len(input_ids), end_idx)
@@ -713,13 +710,9 @@ def encode_prompt_v2(
         assert False, prompt
 
     assert (labels == start_token_id).sum() == (labels == end_token_id).sum(), prompt
-    assert (
-        sum([(labels == num_bot).sum() for num_bot in bot_token_id])
-        >= (labels == start_token_id).sum()
-    ), prompt
+    assert (labels == bot_token_id).sum() >= (labels == start_token_id).sum(), prompt
 
     input_ids = torch.LongTensor(input_ids)
-
     return {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
@@ -786,7 +779,7 @@ def prepare_dataset_v7(
         tokenizer=tokenizer,
         start_token_id=2,
         end_token_id=3,
-        bot_token_id=[605, 37902],
+        bot_token_id=46787,
     )
 
     return {

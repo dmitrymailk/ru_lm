@@ -5,11 +5,28 @@ import os
 
 import wandb
 import torch
+
+torch.backends.cudnn.benchmark = True
+
 import numpy as np
 import bitsandbytes as bnb
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM, DataCollatorForTokenClassification, DataCollatorForSeq2Seq
-from transformers import Trainer, TrainingArguments, logging, TrainerCallback, TrainerState, TrainerControl, BitsAndBytesConfig
+from transformers import (
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM,
+    AutoModelForCausalLM,
+    DataCollatorForTokenClassification,
+    DataCollatorForSeq2Seq,
+)
+from transformers import (
+    Trainer,
+    TrainingArguments,
+    logging,
+    TrainerCallback,
+    TrainerState,
+    TrainerControl,
+    BitsAndBytesConfig,
+)
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training
 
@@ -19,6 +36,13 @@ from src.util.io import read_jsonl
 
 os.environ["WANDB_LOG_MODEL"] = "checkpoint"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+import sys
+
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../../"))
+)
+# print(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
+from utils.data.data_utils import create_prompt_dataset_v2
 
 
 class TrainerNoBaseSave(Trainer):
@@ -68,31 +92,39 @@ class SavePeftModelCallback(TrainerCallback):
 
 
 def custom_prepare_model_for_int8_training(
-    model,
-    output_embedding_layer_name="lm_head",
-    layer_norm_names=["layer_norm"]
+    model, output_embedding_layer_name="lm_head", layer_norm_names=["layer_norm"]
 ):
     for name, param in model.named_parameters():
         param.requires_grad = False
 
     for name, param in model.named_parameters():
-        if param.ndim == 1 and any(layer_norm_name in name for layer_norm_name in layer_norm_names):
+        if param.ndim == 1 and any(
+            layer_norm_name in name for layer_norm_name in layer_norm_names
+        ):
             param.data = param.data.to(torch.float32)
 
     if hasattr(model, "enable_input_require_grads"):
         model.enable_input_require_grads()
     else:
+
         def make_inputs_require_grad(module, input, output):
             output.requires_grad_(True)
+
         model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
     if hasattr(model, output_embedding_layer_name):
         output_embedding_layer = getattr(model, output_embedding_layer_name)
         input_dtype = output_embedding_layer.weight.dtype
+
         class CastOutputToFloat(torch.nn.Sequential):
             def forward(self, x):
                 return super().forward(x.to(input_dtype)).to(torch.float32)
-        setattr(model, output_embedding_layer_name, CastOutputToFloat(output_embedding_layer))
+
+        setattr(
+            model,
+            output_embedding_layer_name,
+            CastOutputToFloat(output_embedding_layer),
+        )
 
     model.gradient_checkpointing_enable()
 
@@ -110,7 +142,7 @@ def train(
     report_to,
     seed,
     local_rank,
-    omit_base_model_save
+    omit_base_model_save,
 ):
     set_random_seed(seed)
     logging.set_verbosity_info()
@@ -130,12 +162,12 @@ def train(
     callbacks = [SavePeftModelCallback] if lora_config else []
     training_args = TrainingArguments(
         output_dir=output_dir,
-        save_total_limit=1,
+        # save_total_limit=1,
         load_best_model_at_end=True,
         report_to=report_to,
         ddp_find_unused_parameters=False if ddp else None,
         deepspeed=deepspeed_config,
-        **trainer_config
+        **trainer_config,
     )
     model_name = config["model_name"]
 
@@ -168,7 +200,7 @@ def train(
             templates_path=templates_path,
             target_field=target_field,
             source_field=source_field,
-            only_target_loss=only_target_loss
+            only_target_loss=only_target_loss,
         )
 
         val_dataset = InstructDataset(
@@ -181,7 +213,7 @@ def train(
             templates_path=templates_path,
             target_field=target_field,
             source_field=source_field,
-            only_target_loss=only_target_loss
+            only_target_loss=only_target_loss,
         )
     elif mode == "chat":
         max_tokens_count = config["max_tokens_count"]
@@ -192,7 +224,7 @@ def train(
             max_tokens_count=max_tokens_count,
             sample_rate=train_sample_rate,
             templates_path=templates_path,
-            only_target_loss=only_target_loss
+            only_target_loss=only_target_loss,
         )
 
         val_dataset = ChatDataset(
@@ -201,7 +233,21 @@ def train(
             max_tokens_count=max_tokens_count,
             sample_rate=train_sample_rate,
             templates_path=templates_path,
-            only_target_loss=only_target_loss
+            only_target_loss=only_target_loss,
+        )
+    elif mode == "custom_chat":
+        print("Mode custom chat")
+        max_tokens_count = config["max_tokens_count"]
+        data_path = "chip2_instruct_alpha_prompt_en_v2_clean_v2 chip2_instruct_alpha_prompt_ru_v2_clean_v1 dolly_original_prompt_v2_clean_v1 dolly_translated_prompt_v2_clean_v1 openass_prompt_dataset_en_v2_clean_v2 openass_prompt_dataset_ru_v2_clean_v1".split()
+        output_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets"
+        train_dataset, val_dataset = create_prompt_dataset_v2(
+            datasets_names=data_path,
+            tokenizer=tokenizer,
+            max_seq_len=2048,
+            output_path=output_path,
+            seed=seed,
+            # prepare_dataset_version="v7",
+            prepare_dataset_version="v5",
         )
     else:
         assert False
@@ -209,7 +255,9 @@ def train(
     if "seq2seq" in model_type:
         data_collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8)
     else:
-        data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
+        data_collator = DataCollatorForTokenClassification(
+            tokenizer, pad_to_multiple_of=8
+        )
 
     print("INPUT_IDS")
     print(data_collator([train_dataset[0], train_dataset[1]])["input_ids"][0])
@@ -218,10 +266,7 @@ def train(
     print("LABELS")
     print(data_collator([train_dataset[0], train_dataset[1]])["labels"][0])
 
-    model_types = {
-        "causal": AutoModelForCausalLM,
-        "seq2seq": AutoModelForSeq2SeqLM
-    }
+    model_types = {"causal": AutoModelForCausalLM, "seq2seq": AutoModelForSeq2SeqLM}
     load_in_8bit = bool(config.get("load_in_8bit", False))
     load_in_4bit = bool(config.get("load_in_4bit", False))
     use_bf16 = bool(trainer_config.get("bf16", False))
@@ -232,7 +277,7 @@ def train(
             model_name,
             load_in_8bit=True,
             device_map=device_map,
-            torch_dtype=torch_dtype
+            torch_dtype=torch_dtype,
         )
         model = fix_model(model, tokenizer, use_resize=False)
         model = custom_prepare_model_for_int8_training(model)
@@ -249,9 +294,9 @@ def train(
                 llm_int8_has_fp16_weight=False,
                 bnb_4bit_compute_dtype=torch_dtype,
                 bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4"
+                bnb_4bit_quant_type="nf4",
             ),
-            torch_dtype=torch_dtype
+            torch_dtype=torch_dtype,
         )
         model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_kbit_training(model)
@@ -263,11 +308,13 @@ def train(
     model.config.num_beams = 5
     if mode == "instruct":
         max_tokens_count = max_target_tokens_count + max_source_tokens_count + 1
-    model.config.max_length = max_tokens_count if model_type == "causal" else max_target_tokens_count
+    model.config.max_length = (
+        max_tokens_count if model_type == "causal" else max_target_tokens_count
+    )
 
-    if not ddp and torch.cuda.device_count() > 1:
-        model.is_parallelizable = True
-        model.model_parallel = True
+    # if not ddp and torch.cuda.device_count() > 1:
+    #     model.is_parallelizable = True
+    #     model.model_parallel = True
 
     if lora_config:
         lora_config = LoraConfig(**lora_config)
@@ -281,7 +328,7 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         callbacks=callbacks,
-        data_collator=data_collator
+        data_collator=data_collator,
     )
 
     with wandb.init(project="rulm_self_instruct", name=config_file) as run:

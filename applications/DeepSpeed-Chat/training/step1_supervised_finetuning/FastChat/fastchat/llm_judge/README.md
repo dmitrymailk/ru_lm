@@ -72,6 +72,18 @@ e.g.,
 ```
 python gen_judgment.py --model-list gpt-3.5-turbo --mode single 
 ```
+
+```
+python gen_judgment.py --model-list saiga_7b_v2_ru --mode single --judge-file data/judge_prompts_ru.jsonl --question-file question_ru
+```
+
+```
+python3 qa_browser.py  --share --question-file question_ru
+```
+```
+python3 qa_browser.py  --share --question-file question
+```
+
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 
 #### Step 3. Show MT-bench scores

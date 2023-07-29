@@ -1,15 +1,11 @@
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
 import torch
 from transformers import (
     AutoTokenizer,
-    GPT2LMHeadModel,
     AutoModelForSequenceClassification,
 )
 
 import numpy as np
+from datasets import load_dataset
 
 import optuna
 
@@ -17,6 +13,8 @@ import optuna
 from peft import PeftModel, PeftConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import torch
+
+from optuna.integration.wandb import WeightsAndBiasesCallback
 
 DEFAULT_MESSAGE_TEMPLATE = " <s> {role}\n{content} </s>\n"
 DEFAULT_SYSTEM_PROMPT = "Ты — Горал, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им."
@@ -71,7 +69,7 @@ def generate(model, tokenizer, prompt, generation_config):
     return output.strip()
 
 
-weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_4.5B/checkpoint-2950/adapter_model"
+weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_4.5B/checkpoint-4550/adapter_model"
 tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_4.5B"
 
 config = PeftConfig.from_pretrained(weights_path)
@@ -92,22 +90,27 @@ rank_model = AutoModelForSequenceClassification.from_pretrained(reward_name)
 rank_tokenizer = AutoTokenizer.from_pretrained(reward_name)
 rank_model.cuda()
 
-prompts = [
-    "Explain nuclear fusion like I am five.",
-    "I just came out of from jail, any suggestion of my future?",
-    "What is Depreciation",
-]
+# prompts = [
+#     "Explain nuclear fusion like I am five.",
+#     "I just came out of from jail, any suggestion of my future?",
+#     "What is Depreciation",
+#     "What is life?"
+# ]
+
+prompts = load_dataset("dim/mt_bench_en")
+prompts = prompts["train"]
+prompts = [item["turns"][0] for item in prompts][:15]
 
 
 def objective(trial):
-    # top_p = trial.suggest_float("top_p", 0.1, 1.0)
-    # temperature = trial.suggest_float("temperature", 0.1, 2.0)
-    # repetition_penalty = trial.suggest_float("repetition_penalty", 0.1, 1.5)
-    # top_k = trial.suggest_int("top_k", 1, 300)
+    top_p = trial.suggest_float("top_p", 0.1, 1.0)
+    temperature = trial.suggest_float("temperature", 0.1, 2.0)
+    repetition_penalty = trial.suggest_float("repetition_penalty", 0.1, 1.5)
+    top_k = trial.suggest_int("top_k", 1, 80)
     # constructive search
-    penalty_alpha = trial.suggest_float("penalty_alpha", 0.3, 0.9)
-    top_k = trial.suggest_int("top_k", 1, 10)
-    repetition_penalty = trial.suggest_float("repetition_penalty", 0.9, 1.1)
+    # penalty_alpha = trial.suggest_float("penalty_alpha", 0.3, 0.9)
+    # top_k = trial.suggest_int("top_k", 1, 20)
+    # repetition_penalty = trial.suggest_float("repetition_penalty", 0.8, 1.2)
     evals = []
 
     for step in range(len(prompts)):
@@ -117,16 +120,17 @@ def objective(trial):
         prompt = conversation.get_prompt(gen_tokenizer)
         # print("PROMPT", prompt)
         generation_config = GenerationConfig(
+            do_sample=True,
             max_new_tokens=512,
             # no_repeat_ngram_size=no_repeat_ngram_size,
-            # repetition_penalty=repetition_penalty,
-            # temperature=temperature,
-            # top_k=top_k,
-            # top_p=top_p,
-            # -----  constructive search
-            penalty_alpha=penalty_alpha,
-            top_k=top_k,
             repetition_penalty=repetition_penalty,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            # -----  constructive search
+            # penalty_alpha=penalty_alpha,
+            # top_k=top_k,
+            # repetition_penalty=repetition_penalty,
         )
         result = generate(gen_model, gen_tokenizer, prompt, generation_config)
         print(
@@ -141,6 +145,21 @@ def objective(trial):
         rank_score = rank_model(**rank_inputs).logits[0].cpu().detach()
         rank_score = float(rank_score)
         print("SCORE", rank_score)
+        print(
+            f"""PARAMS:
+            repetition_penalty={repetition_penalty}
+            temperature={temperature}
+            top_k={top_k}
+            top_p={top_p}
+              """
+        )
+        # print(
+        #     f"""PARAMS:
+        #       penalty_alpha={penalty_alpha}
+        #       top_k={top_k}
+        #       repetition_penalty={repetition_penalty}
+        #       """
+        # )
         trial.report(rank_score, step=step)
         evals.append(rank_score)
 
@@ -151,14 +170,15 @@ def objective(trial):
 
 
 study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=300)
+
+wandb_kwargs = {"project": "generation_optuna"}
+wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+
+study.optimize(
+    objective,
+    n_trials=400,
+    callbacks=[wandbc],
+    n_jobs=1,
+)
 
 print(study.best_params)
-# обычный подбор 100 попыток
-# {'top_p': 0.8462093887585331, 'temperature': 0.8854714157162881, 'repetition_penalty': 1.0390300295155908, 'top_k': 218}
-
-# constructive
-# {'penalty_alpha': 0.15179011343178722, 'top_k': 2, 'repetition_penalty': 1.2203762978220836}
-# {'penalty_alpha': 0.45662610978236967, 'top_k': 4, 'repetition_penalty': 1.025161759659547}
-# {'penalty_alpha': 0.46017593114309874, 'top_k': 6, 'repetition_penalty': 0.9919855327156304}
-# {'penalty_alpha': 0.3116840503163154, 'top_k': 19, 'repetition_penalty': 1.04177069065127}

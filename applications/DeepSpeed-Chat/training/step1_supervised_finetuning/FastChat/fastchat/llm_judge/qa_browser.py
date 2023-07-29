@@ -386,10 +386,11 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--bench-name", type=str, default="mt_bench")
+    parser.add_argument("--question-file", type=str, default="question")
     args = parser.parse_args()
     print(args)
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}.jsonl"
     answer_dir = f"data/{args.bench_name}/model_answer"
     pairwise_model_judgment_file = (
         f"data/{args.bench_name}/model_judgment/gpt-4_pair.jsonl"

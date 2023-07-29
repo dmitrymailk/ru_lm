@@ -91,46 +91,6 @@ class SavePeftModelCallback(TrainerCallback):
         return control
 
 
-def custom_prepare_model_for_int8_training(
-    model, output_embedding_layer_name="lm_head", layer_norm_names=["layer_norm"]
-):
-    for name, param in model.named_parameters():
-        param.requires_grad = False
-
-    for name, param in model.named_parameters():
-        if param.ndim == 1 and any(
-            layer_norm_name in name for layer_norm_name in layer_norm_names
-        ):
-            param.data = param.data.to(torch.float32)
-
-    if hasattr(model, "enable_input_require_grads"):
-        model.enable_input_require_grads()
-    else:
-
-        def make_inputs_require_grad(module, input, output):
-            output.requires_grad_(True)
-
-        model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
-
-    if hasattr(model, output_embedding_layer_name):
-        output_embedding_layer = getattr(model, output_embedding_layer_name)
-        input_dtype = output_embedding_layer.weight.dtype
-
-        class CastOutputToFloat(torch.nn.Sequential):
-            def forward(self, x):
-                return super().forward(x.to(input_dtype)).to(torch.float32)
-
-        setattr(
-            model,
-            output_embedding_layer_name,
-            CastOutputToFloat(output_embedding_layer),
-        )
-
-    model.gradient_checkpointing_enable()
-
-    return model
-
-
 def train(
     config_file,
     checkpoint,
@@ -162,7 +122,7 @@ def train(
     callbacks = [SavePeftModelCallback] if lora_config else []
     training_args = TrainingArguments(
         output_dir=output_dir,
-        save_total_limit=1,
+        # save_total_limit=1,
         load_best_model_at_end=True,
         report_to=report_to,
         ddp_find_unused_parameters=False if ddp else None,
@@ -248,8 +208,8 @@ def train(
             max_seq_len=2048,
             output_path=output_path,
             seed=seed,
-            # prepare_dataset_version="v7",
-            prepare_dataset_version="v5",
+            prepare_dataset_version="v7",
+            # prepare_dataset_version="v5",
         )
     else:
         assert False
@@ -284,7 +244,7 @@ def train(
         if not "xglm" in model_name.lower():
             model = fix_model(model, tokenizer, use_resize=False)
 
-        model = custom_prepare_model_for_int8_training(model)
+        model = prepare_model_for_int8_training(model)
 
     elif load_in_4bit:
         assert not load_in_8bit
@@ -323,9 +283,9 @@ def train(
         max_tokens_count if model_type == "causal" else max_target_tokens_count
     )
 
-    if torch.cuda.device_count() > 1:
-        model.is_parallelizable = True
-        model.model_parallel = True
+    # if torch.cuda.device_count() > 1:
+    #     model.is_parallelizable = True
+    #     model.model_parallel = True
 
     if lora_config:
         lora_config = LoraConfig(**lora_config)

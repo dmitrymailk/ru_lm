@@ -10,9 +10,9 @@ mkdir -p ./models/$OUTPUT
 export WANDB_NAME=$OUTPUT
 
 # nohup python -u -m src.train --config-file configs/saiga_7b.json \
-# nohup python -u -m src.train --config-file configs/llama-2_7b.json \
 # nohup python -u -m src.train --config-file configs/ruGPT3.5-13B.json \
-nohup python -u -m src.train --config-file configs/xglm_4.5b.json \
+# nohup python -u -m src.train --config-file configs/saiga2_7b.json \
+nohup python -u -m src.train --config-file configs/saiga2_13b.json \
 	--train-file ./train.jsonl \
 	--val-file valid.jsonl  \
 	--output-dir models/$OUTPUT \

@@ -2,6 +2,10 @@
 Usage:
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call] --mode [single|pairwise-baseline|pairwise-all]
 """
+import os
+
+os.environ["OPENAI_API_KEY"] = open("./gpt_token").read()
+
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -180,6 +184,12 @@ if __name__ == "__main__":
         default="data/judge_prompts.jsonl",
         help="The file of judge prompts.",
     )
+    parser.add_argument(
+        "--question-file",
+        type=str,
+        default="question",
+        help="The file of question prompts.",
+    )
     parser.add_argument("--judge-model", type=str, default="gpt-4")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
@@ -209,7 +219,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}.jsonl"
     answer_dir = f"data/{args.bench_name}/model_answer"
     ref_answer_dir = f"data/{args.bench_name}/reference_answer"
 
