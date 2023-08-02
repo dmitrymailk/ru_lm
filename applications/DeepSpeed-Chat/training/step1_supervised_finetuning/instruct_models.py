@@ -6,6 +6,10 @@ import torch
 import gc
 from transformers import StoppingCriteria, StoppingCriteriaList
 
+import requests
+import json
+import uuid
+
 
 class GoralConversation:
     def __init__(
@@ -82,7 +86,12 @@ class SaigaConversation:
 
 
 def generate(model, tokenizer, prompt, generation_config):
-    data = tokenizer(prompt, return_tensors="pt")
+    data = tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True,
+        max_length=2048,
+    )
     data = {k: v.to(model.device) for k, v in data.items()}
     output_ids = model.generate(**data, generation_config=generation_config)[0]
     output_ids = output_ids[len(data["input_ids"][0]) :]
@@ -252,3 +261,88 @@ class XGLMConversation:
         answer = answer.replace("Human:", " ")
         answer = answer.replace("Assistant:", " ")
         return answer
+
+
+class GigaChatConversationAPI:
+    def __init__(
+        self,
+        creds_path: str = "./gigachad.json",
+        session_id=None,
+    ) -> None:
+        self.creds_path = creds_path
+        self.headers = json.loads(open(self.creds_path).read())
+        self.current_conversation = None
+
+        # для того чтобы начать новую беседу нужно пересоздать
+        # объект класса
+        if session_id is None:
+            session_id = str(uuid.uuid1())
+        self.current_conversation = session_id
+
+    def send_message(self, user_message: str):
+        self.headers[
+            "Referer"
+        ] = f"https://developers.sber.ru/studio/workspaces/69a30c72-a3ac-43c6-8c5e-821383a4f064/ml/projects/70bc01c6-9062-4aa6-9c77-26c550fb4440/sessions/{self.current_conversation}"
+        payload = {
+            "generate_alternatives": False,
+            "preset": "default",
+            "request_json": user_message,
+            "session_id": self.current_conversation,
+            "model_type": "GigaChat:v1.13.0",
+        }
+        # print("PAYLOAD: ", payload)
+        response = requests.post(
+            "https://developers.sber.ru/api/chatwm/api/client/request",
+            headers=self.headers,
+            data=json.dumps(payload),
+        )
+        response = response.json()
+        # print("RESPONSE: ", response)
+
+        request_id = self.get_request_id()
+        self.request_id = request_id
+        bot_response = self._get_bot_response(request_id=request_id)
+        return bot_response
+
+    def get_request_id(
+        self,
+    ):
+        payload = {
+            "offset": 0,
+            "limit": 26,
+            "session_id": "a63627a1-7261-40a5-ae0b-00bafaadc542",
+            "newer_first": True,
+        }
+        payload["session_id"] = self.current_conversation
+        self.headers[
+            "Referer"
+        ] = f"https://developers.sber.ru/studio/workspaces/69a30c72-a3ac-43c6-8c5e-821383a4f064/ml/projects/70bc01c6-9062-4aa6-9c77-26c550fb4440/sessions/{self.current_conversation}"
+        # print(payload)
+
+        response = requests.post(
+            "https://developers.sber.ru/api/chatwm/api/client/session_messages",
+            headers=self.headers,
+            data=json.dumps(payload),
+        )
+        request_id = response.json()["messages"][0]["request_id"]
+
+        return request_id
+
+    def _get_bot_response(self, request_id: str):
+        space_id = self.headers["Space-Id"]
+        user_id = self.headers["User-Id"]
+        request_str = f"https://developers.sber.ru/api/chatwm/api/client/get_result_events?request_id={request_id}&space-id={space_id}&user-id={user_id}"
+        # print(request_str)
+        response = requests.get(
+            request_str,
+            headers=self.headers,
+        )
+        self.bot_response = response
+        response = list(response.iter_lines())
+        # print(response)
+        response = response[-2]
+        response = response.decode("utf-8")[5:].strip()
+        response = json.loads(response)
+        response = response["responses"][0]["data"]
+        # print("BOT RESPONSE", response)
+        return response
