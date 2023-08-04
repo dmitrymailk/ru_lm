@@ -4,7 +4,7 @@
 ## Quickstart
 
 ```bash
-python3.9 mmlu_ru.py --hf_model_id "huggyllama/llama-7b" --k_shot 5 --lang "ru" --output_dir "results"
+python mmlu_ru.py --hf_model_id "huggyllama/llama-7b" --k_shot 5 --lang "ru" --output_dir "results"
 ```
 
 Possible parameters:

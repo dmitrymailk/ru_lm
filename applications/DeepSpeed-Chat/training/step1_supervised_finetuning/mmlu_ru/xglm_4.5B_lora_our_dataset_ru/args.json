@@ -1,0 +1,1 @@
+{"hf_model_id": "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_4.5B", "k_shot": 5, "lang": "ru", "output_dir": "xglm_4.5B_lora_our_dataset"}

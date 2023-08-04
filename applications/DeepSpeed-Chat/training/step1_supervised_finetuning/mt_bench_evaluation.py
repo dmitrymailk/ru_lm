@@ -370,7 +370,8 @@ if __name__ == "__main__":
 
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_rugpt_13B_our_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_saiga_dataset.json"
-    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_lora_saiga_dataset.json"
+    # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_lora_saiga_dataset.json"
+    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_gigachat.json"
     # ----
     # # rugpt
     # start_token_id = 2
@@ -398,14 +399,14 @@ if __name__ == "__main__":
     #     start_token_id=start_token_id,
     #     bot_token_id=bot_token_id,
     # )
-    eval_ru_saiga_based(
-        weights_path=weights_path,
-        tokenizer_path=tokenizer_path,
-        output_save_path=output_save_path,
-        conversation_class=conversation_class,
-        start_token_id=start_token_id,
-        bot_token_id=bot_token_id,
-    )
+    # eval_ru_saiga_based(
+    #     weights_path=weights_path,
+    #     tokenizer_path=tokenizer_path,
+    #     output_save_path=output_save_path,
+    #     conversation_class=conversation_class,
+    #     start_token_id=start_token_id,
+    #     bot_token_id=bot_token_id,
+    # )
     # eval_xglm_based(
     #     model_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=41141",
     #     output_save_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_xglm_4.5b_v10_epoch_6_step_41141.json",
@@ -416,8 +417,8 @@ if __name__ == "__main__":
     #     output_save_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5b_v10_epoch_6_step_41141.json",
     #     conversation_class=XGLMConversation,
     # )
-    # gigachat_eval_based(
-    #     # lang="ru",
-    #     lang="en",
-    #     output_save_path=output_save_path,
-    # )
+    gigachat_eval_based(
+        # lang="ru",
+        lang="en",
+        output_save_path=output_save_path,
+    )

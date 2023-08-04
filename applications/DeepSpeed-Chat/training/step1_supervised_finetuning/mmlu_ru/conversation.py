@@ -1,11 +1,12 @@
 import abc
 import typing as tp
 
-        
+
 class Conversation(abc.ABC):
     """
     Inspired by https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
     """
+
     def __init__(self, system_prompt: str, roles: tp.Tuple[str, str]):
         self.system_prompt = system_prompt
         self.roles = roles
@@ -21,9 +22,8 @@ class Conversation(abc.ABC):
     def append_message(self, role: str, text: str) -> None:
         self.messages.append([role, text])
 
-        
-class LlamaConversation(Conversation):
 
+class LlamaConversation(Conversation):
     def __init__(self):
         super().__init__(
             system_prompt="",  # faked for compatibility
@@ -34,16 +34,16 @@ class LlamaConversation(Conversation):
         prompt = self.system_prompt
         for role, text in self.messages:
             if text:
-                prompt += f"{role}{text}"
+                prompt += f" {role} {text}"
             else:
-                prompt += f"{role}"
+                prompt += f" {role} "
         return prompt
 
 
 class SaigaConversation(Conversation):
     def __init__(self):
         super().__init__(
-            system_prompt="<s>system\nТы — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им.</s>\n",
+            system_prompt="<s> system\n Ты — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им.</s>\n",
             roles=("user", "bot"),
         )
 
@@ -51,14 +51,32 @@ class SaigaConversation(Conversation):
         prompt = self.system_prompt
         for role, text in self.messages:
             if text:
-                prompt += f"<s>{role}\n{text}</s>\n"
+                prompt += f"<s> {role}\n {text} </s>\n"
             else:
-                prompt += f"<s>{role}"
+                prompt += f"<s> {role} "
+        return prompt
+
+
+class GoralConversation(Conversation):
+    def __init__(self):
+        super().__init__(
+            system_prompt="<s> system\n Ты — Горал, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им.</s>\n",
+            roles=("user", "bot"),
+        )
+
+    def get_prompt(self) -> str:
+        prompt = self.system_prompt
+        for role, text in self.messages:
+            if text:
+                prompt += f"<s> {role}\n {text} </s>\n"
+            else:
+                prompt += f"<s> {role} "
         return prompt
 
 
 conversation_classes = {
     "saiga": SaigaConversation,
+    "goral": GoralConversation,
     "llama": LlamaConversation,
 }
 

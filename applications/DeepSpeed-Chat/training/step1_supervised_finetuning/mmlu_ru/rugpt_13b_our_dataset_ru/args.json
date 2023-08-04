@@ -1,0 +1,1 @@
+{"hf_model_id": "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/rugpt_v1", "k_shot": 5, "lang": "ru", "output_dir": "rugpt_13b_our_dataset_ru"}
