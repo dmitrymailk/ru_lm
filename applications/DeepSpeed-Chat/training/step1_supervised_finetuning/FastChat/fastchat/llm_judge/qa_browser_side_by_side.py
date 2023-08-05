@@ -33,6 +33,8 @@ model_judgments_math_pairwise = {}
 question_selector_map = {}
 category_selector_map = defaultdict(list)
 
+side_by_side_comparison = {}
+
 
 def display_question(category_selector, request: gr.Request):
     choices = category_selector_map[category_selector]
@@ -50,7 +52,7 @@ def display_pairwise_answer(
 
     ans1 = model_answers[model_selector1][qid]
     ans2 = model_answers[model_selector2][qid]
-    
+
     # return like mds = ["", "", "", "", "", "", ""]
     chat_mds = pairwise_to_gradio_chat_mds(q, ans1, ans2)
     gamekey = (qid, model_selector1, model_selector2)
@@ -83,6 +85,17 @@ def display_pairwise_answer(
 
 
 def display_single_answer(question_selector, model_selector1, request: gr.Request):
+    """
+    returns like that
+    [
+        'Question 1',
+        'Solution 1',
+        'Question 2',
+        'Solution 2',
+        'Judgement solution 1',
+        'Judgement solution 2',
+    ]
+    """
     q = question_selector_map[question_selector]
     qid = q["question_id"]
 
@@ -234,7 +247,7 @@ def build_pairwise_browser_tab():
     # Conversation
     chat_mds = []
     for i in range(num_turns):
-        chat_mds.append(gr.Markdown(elem_id=f"user_question_{i+1}"))
+        chat_mds.append(gr.Markdown(elem_classes=f"user_question_{i+1}"))
         with gr.Row():
             for j in range(num_sides):
                 with gr.Column(scale=100):
@@ -243,11 +256,11 @@ def build_pairwise_browser_tab():
                 if j == 0:
                     with gr.Column(scale=1, min_width=8):
                         gr.Markdown()
-    reference = gr.Markdown(elem_id=f"reference")
+    reference = gr.Markdown(elem_classes=f"reference")
     chat_mds.append(reference)
 
-    model_explanation = gr.Markdown(elem_id="model_explanation")
-    model_explanation2 = gr.Markdown(elem_id="model_explanation")
+    model_explanation = gr.Markdown(elem_classes="model_explanation")
+    model_explanation2 = gr.Markdown(elem_classes="model_explanation")
 
     # Callbacks
     category_selector.change(display_question, [category_selector], [question_selector])
@@ -265,6 +278,147 @@ def build_pairwise_browser_tab():
         )
 
     return (category_selector,)
+
+
+def build_side_by_side_browser_tab():
+    gr.Markdown("# Side by side comparison")
+
+    # category_selector_choices = ['category_1', 'category_2']
+    # question_selector_choices = ['question text 1', 'question text 2']
+    global question_selector_map, category_selector_map
+
+    models = list(model_answers.keys())
+
+    question_selector_choices = list(question_selector_map.keys())
+    category_selector_choices = list(category_selector_map.keys())
+
+    # Selectors
+    with gr.Row():
+        with gr.Column(scale=1, min_width=200):
+            category_selector = gr.Dropdown(
+                choices=category_selector_choices, label="Category", container=False
+            )
+        with gr.Column(scale=100):
+            question_selector = gr.Dropdown(
+                choices=question_selector_choices, label="Question", container=False
+            )
+
+    num_sides = 2
+    num_turns = 2
+    model_selectors = [None] * num_sides
+    with gr.Row():
+        for i in range(num_sides):
+            with gr.Column():
+                model_selectors[i] = gr.Dropdown(
+                    choices=models, label=f"Model {i}", value=models[0]
+                )
+
+    chat_mds = []
+    for i in range(num_turns):
+        chat_mds.append(gr.Markdown(elem_classes=f"user_question_{i+1}"))
+        with gr.Row():
+            for j in range(num_sides):
+                with gr.Column(scale=100):
+                    chat_mds.append(gr.Markdown())
+        with gr.Row():
+            model_explanation = gr.Markdown(elem_classes="model_explanation")
+            model_explanation2 = gr.Markdown(elem_classes="model_explanation")
+            chat_mds.append(model_explanation)
+            chat_mds.append(model_explanation2)
+
+    category_selector.change(display_question, [category_selector], [question_selector])
+    question_selector.change(
+        display_side_by_side_answer,
+        [question_selector] + model_selectors,
+        chat_mds,
+    )
+
+    for i in range(num_sides):
+        model_selectors[i].change(
+            display_side_by_side_answer,
+            [question_selector] + model_selectors,
+            chat_mds,
+        )
+
+    return (category_selector,)
+
+
+def display_side_by_side_answer(
+    question_selector,
+    model_selector1,
+    model_selector2,
+    request,
+):
+    """
+    expect return like this
+    result =  [
+            "question 1",
+            "model 1 answer",
+            "model 2 answer",
+            "model 1 explanation",
+            "model 2 explanation",
+            "question 2",
+            "model 1 answer",
+            "model 2 answer",
+            "model 1 explanation",
+            "model 2 explanation",
+        ]
+    """
+    print(question_selector, model_selector1, model_selector2)
+    # returns
+    # '0 Question 1',
+    # '1 Solution 1',
+    # '2 Question 2',
+    # '3 Solution 2',
+    # '4 '
+    # '5 Judgement solution 1',
+    # '6 Judgement solution 2'
+    model_solution_1 = display_single_answer(
+        question_selector=question_selector,
+        model_selector1=model_selector1,
+        request=request,
+    )
+    model_solution_2 = display_single_answer(
+        question_selector=question_selector,
+        model_selector1=model_selector2,
+        request=request,
+    )
+    # print("model_solution_2", model_solution_2)
+    result = [
+        # question 1
+        model_solution_1[0],
+        # model 1 answer
+        model_solution_1[1],
+        # model 2 answer
+        model_solution_2[1],
+        # model 1 explanation
+        model_solution_1[5],
+        # model 2 explanation
+        model_solution_2[5],
+        # question 2
+        model_solution_1[2],
+        # model 1 answer
+        model_solution_1[3],
+        # model 2 answer
+        model_solution_2[3],
+        # model 1 explanation
+        model_solution_1[6],
+        # model 2 explanation
+        model_solution_2[6],
+    ]
+    # result = [
+    #     "question 1",
+    #     "model 1 answer",
+    #     "model 2 answer",
+    #     "model 1 explanation",
+    #     "model 2 explanation",
+    #     "question 2",
+    #     "model 1 answer",
+    #     "model 2 answer",
+    #     "model 1 explanation",
+    #     "model 2 explanation",
+    # ]
+    return result
 
 
 def build_single_answer_browser_tab():
@@ -303,7 +457,7 @@ def build_single_answer_browser_tab():
     # Conversation
     chat_mds = []
     for i in range(num_turns):
-        chat_mds.append(gr.Markdown(elem_id=f"user_question_{i+1}"))
+        chat_mds.append(gr.Markdown(elem_classes=f"user_question_{i+1}"))
         with gr.Row():
             for j in range(num_sides):
                 with gr.Column(scale=100):
@@ -313,11 +467,11 @@ def build_single_answer_browser_tab():
                     with gr.Column(scale=1, min_width=8):
                         gr.Markdown()
 
-    reference = gr.Markdown(elem_id=f"reference")
+    reference = gr.Markdown(elem_classes=f"reference")
     chat_mds.append(reference)
 
-    model_explanation = gr.Markdown(elem_id="model_explanation")
-    model_explanation2 = gr.Markdown(elem_id="model_explanation")
+    model_explanation = gr.Markdown(elem_classes="model_explanation")
+    model_explanation2 = gr.Markdown(elem_classes="model_explanation")
 
     # Callbacks
     category_selector.change(display_question, [category_selector], [question_selector])
@@ -338,16 +492,16 @@ def build_single_answer_browser_tab():
 
 
 block_css = """
-#user_question_1 {
+.user_question_1 {
     background-color: #DEEBF7;
 }
-#user_question_2 {
+.user_question_2 {
     background-color: #E2F0D9;
 }
-#reference {
+.reference {
     background-color: #FFF2CC;
 }
-#model_explanation {
+.model_explanation {
     background-color: #FBE5D6;
 }
 """
@@ -374,8 +528,10 @@ The code to generate answers and judgments is at [fastchat.llm_judge](https://gi
         )
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
-        with gr.Tab("Pairwise Comparison"):
-            (category_selector2,) = build_pairwise_browser_tab()
+        # with gr.Tab("Pairwise Comparison"):
+        #     (category_selector2,) = build_pairwise_browser_tab()
+        with gr.Tab("Side by side Comparison"):
+            (category_selector2,) = build_side_by_side_browser_tab()
         # demo.load(load_demo, [], [category_selector, category_selector2])
         # demo.load(load_demo, [], [category_selector])
 
@@ -384,6 +540,7 @@ The code to generate answers and judgments is at [fastchat.llm_judge](https://gi
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
@@ -391,6 +548,15 @@ if __name__ == "__main__":
     parser.add_argument("--question-file", type=str, default="question")
     args = parser.parse_args()
     print(args)
+    # class ArgsDebug:
+    #     def __init__(self):
+    #         self.host = "0.0.0.0"
+    #         self.port = None
+    #         self.share = True
+    #         self.bench_name = "mt_bench"
+    #         self.question_file = "question_ru"
+
+    # args = ArgsDebug()
 
     question_file = f"data/{args.bench_name}/{args.question_file}.jsonl"
     answer_dir = f"data/{args.bench_name}/model_answer"
@@ -416,6 +582,6 @@ if __name__ == "__main__":
     # ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
 
     demo = build_demo()
-    demo.queue(concurrency_count=10, status_update_rate=10, api_open=False).launch(
+    demo.launch(
         server_name=args.host, server_port=args.port, share=args.share, max_threads=200
     )
