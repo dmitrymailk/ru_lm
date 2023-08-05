@@ -50,7 +50,8 @@ def display_pairwise_answer(
 
     ans1 = model_answers[model_selector1][qid]
     ans2 = model_answers[model_selector2][qid]
-
+    
+    # return like mds = ["", "", "", "", "", "", ""]
     chat_mds = pairwise_to_gradio_chat_mds(q, ans1, ans2)
     gamekey = (qid, model_selector1, model_selector2)
 
@@ -367,14 +368,14 @@ def build_demo():
     ) as demo:
         gr.Markdown(
             """
-# MT-Bench Browser
+# MT-Bench Browserr
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
 """
         )
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
-        # with gr.Tab("Pairwise Comparison"):
-        #     (category_selector2,) = build_pairwise_browser_tab()
+        with gr.Tab("Pairwise Comparison"):
+            (category_selector2,) = build_pairwise_browser_tab()
         # demo.load(load_demo, [], [category_selector, category_selector2])
         # demo.load(load_demo, [], [category_selector])
 
