@@ -360,33 +360,43 @@ def gigachat_eval_based(
 if __name__ == "__main__":
     # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/rugpt_v1/checkpoint-4400/adapter_model"
     # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/checkpoint-4700/adapter_model"
-    weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/checkpoint-5000/adapter_model/"
+    # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/checkpoint-5000/adapter_model/"
     # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2/checkpoint-4900/adapter_model"
+    # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2"
+    # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_13b_v4"
+    # weights_path = "IlyaGusev/saiga2_7b_lora"
+    weights_path = "IlyaGusev/saiga2_13b_lora"
 
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/rugpt_v1"
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/"
-    tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/"
+    # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/"
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2/"
+    # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2"
+    # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_13b_v4"
+    # tokenizer_path = "IlyaGusev/saiga2_7b_lora"
+    tokenizer_path = "IlyaGusev/saiga2_13b_lora"
 
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_rugpt_13B_our_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_saiga_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_lora_saiga_dataset.json"
-    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_gigachat.json"
+    # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_saiga2_7b_our_dataset.json"
+    # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_saiga2_7b.json"
+    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_saiga2_13b.json"
     # ----
     # # rugpt
     # start_token_id = 2
     # # rugpt
     # bot_token_id = 46787
     # # ----
-    # xglm
-    start_token_id = 0
-    # xglm
-    bot_token_id = 7425
+    # # xglm
+    # start_token_id = 0
+    # # xglm
+    # bot_token_id = 7425
     # # ----
-    # # saiga
-    # start_token_id = 1
-    # # saiga
-    # bot_token_id = 9225
+    # saiga
+    start_token_id = 1
+    # saiga
+    bot_token_id = 9225
 
     # conversation_class = GoralConversation
     conversation_class = SaigaConversation
@@ -399,14 +409,14 @@ if __name__ == "__main__":
     #     start_token_id=start_token_id,
     #     bot_token_id=bot_token_id,
     # )
-    # eval_ru_saiga_based(
-    #     weights_path=weights_path,
-    #     tokenizer_path=tokenizer_path,
-    #     output_save_path=output_save_path,
-    #     conversation_class=conversation_class,
-    #     start_token_id=start_token_id,
-    #     bot_token_id=bot_token_id,
-    # )
+    eval_ru_saiga_based(
+        weights_path=weights_path,
+        tokenizer_path=tokenizer_path,
+        output_save_path=output_save_path,
+        conversation_class=conversation_class,
+        start_token_id=start_token_id,
+        bot_token_id=bot_token_id,
+    )
     # eval_xglm_based(
     #     model_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=41141",
     #     output_save_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_xglm_4.5b_v10_epoch_6_step_41141.json",
@@ -417,8 +427,8 @@ if __name__ == "__main__":
     #     output_save_path="/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5b_v10_epoch_6_step_41141.json",
     #     conversation_class=XGLMConversation,
     # )
-    gigachat_eval_based(
-        # lang="ru",
-        lang="en",
-        output_save_path=output_save_path,
-    )
+    # gigachat_eval_based(
+    #     # lang="ru",
+    #     lang="en",
+    #     output_save_path=output_save_path,
+    # )

@@ -373,9 +373,9 @@ The code to generate answers and judgments is at [fastchat.llm_judge](https://gi
         )
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
-        # with gr.Tab("Pairwise Comparison"):
-        #     (category_selector2,) = build_pairwise_browser_tab()
-        # demo.load(load_demo, [], [category_selector, category_selector2])
+        with gr.Tab("Pairwise Comparison"):
+            (category_selector2,) = build_pairwise_browser_tab()
+        demo.load(load_demo, [], [category_selector, category_selector2])
 
     return demo
 
@@ -409,9 +409,9 @@ if __name__ == "__main__":
     model_judgments_normal_single = (
         model_judgments_math_single
     ) = load_single_model_judgments(single_model_judgment_file)
-    # model_judgments_normal_pairwise = (
-    #     model_judgments_math_pairwise
-    # ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
+    model_judgments_normal_pairwise = (
+        model_judgments_math_pairwise
+    ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
 
     demo = build_demo()
     demo.queue(concurrency_count=10, status_update_rate=10, api_open=False).launch(
