@@ -54,7 +54,7 @@ class GoralConversation:
 class SaigaConversation:
     def __init__(
         self,
-        message_template="<s>{role}\n{content}</s>\n",
+        message_template="<s> {role}\n{content}</s>\n",
         system_prompt="Ты — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им.",
         start_token_id=1,
         bot_token_id=9225,
@@ -95,6 +95,17 @@ def generate(model, tokenizer, prompt, generation_config):
     data = {k: v.to(model.device) for k, v in data.items()}
     output_ids = model.generate(**data, generation_config=generation_config)[0]
     output_ids = output_ids[len(data["input_ids"][0]) :]
+    output = tokenizer.decode(output_ids, skip_special_tokens=True)
+    return output.strip()
+
+def generate(model, tokenizer, prompt, generation_config):
+    data = tokenizer(prompt, return_tensors="pt")
+    data = {k: v.to(model.device) for k, v in data.items()}
+    output_ids = model.generate(
+        **data,
+        generation_config=generation_config
+    )[0]
+    output_ids = output_ids[len(data["input_ids"][0]):]
     output = tokenizer.decode(output_ids, skip_special_tokens=True)
     return output.strip()
 

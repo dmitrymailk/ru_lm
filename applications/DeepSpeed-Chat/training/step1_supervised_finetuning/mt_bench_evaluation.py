@@ -53,7 +53,10 @@ def eval_saiga_based(
     print("Test generation")
     print("***")
     inp = "Почему трава зеленая?"
-    conversation = conversation_class()
+    conversation = conversation_class(
+        start_token_id=start_token_id,
+        bot_token_id=bot_token_id,
+    )
     conversation.add_user_message(inp)
     prompt = conversation.get_prompt(tokenizer)
 
@@ -130,7 +133,10 @@ def eval_ru_saiga_based(
     print("Test generation")
     print("***")
     inp = "Почему трава зеленая?"
-    conversation = conversation_class()
+    conversation = conversation_class(
+        start_token_id=start_token_id,
+        bot_token_id=bot_token_id,
+    )
     conversation.add_user_message(inp)
     prompt = conversation.get_prompt(tokenizer)
 
@@ -365,7 +371,8 @@ if __name__ == "__main__":
     # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2"
     # weights_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_13b_v4"
     # weights_path = "IlyaGusev/saiga2_7b_lora"
-    weights_path = "IlyaGusev/saiga2_13b_lora"
+    # weights_path = "IlyaGusev/saiga2_13b_lora"
+    weights_path = "IlyaGusev/gigasaiga_lora"
 
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/rugpt_v1"
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2/"
@@ -374,29 +381,30 @@ if __name__ == "__main__":
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2"
     # tokenizer_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_13b_v4"
     # tokenizer_path = "IlyaGusev/saiga2_7b_lora"
-    tokenizer_path = "IlyaGusev/saiga2_13b_lora"
+    # tokenizer_path = "IlyaGusev/saiga2_13b_lora"
+    tokenizer_path = "IlyaGusev/gigasaiga_lora"
 
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_rugpt_13B_our_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_saiga_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_xglm_4.5B_lora_saiga_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_en_saiga2_7b_our_dataset.json"
     # output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_saiga2_7b.json"
-    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_saiga2_13b.json"
+    output_save_path = "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/datasets/final_evaluation_datasets/mt_bench/mt_bench_ru_gigasaiga_13b.json"
     # ----
-    # # rugpt
-    # start_token_id = 2
-    # # rugpt
-    # bot_token_id = 46787
+    # rugpt
+    start_token_id = 2
+    # rugpt
+    bot_token_id = 46787
     # # ----
     # # xglm
     # start_token_id = 0
     # # xglm
     # bot_token_id = 7425
     # # ----
-    # saiga
-    start_token_id = 1
-    # saiga
-    bot_token_id = 9225
+    # # saiga
+    # start_token_id = 1
+    # # saiga
+    # bot_token_id = 9225
 
     # conversation_class = GoralConversation
     conversation_class = SaigaConversation
