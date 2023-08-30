@@ -1,0 +1,400 @@
+Start translation
+Downloading and preparing dataset json/databricks--databricks-dolly-15k to /home/kosenko/.cache/huggingface/datasets/databricks___json/databricks--databricks-dolly-15k-6e0f9ea7eaa0ee08/0.0.0/fe5dd6ea2639a6df622901539cb550cf8797e5a6b2dd7af1cf934bed8e233e6e...
+Downloading data files:   0%|          | 0/1 [00:00<?, ?it/s]
+Downloading data:   0%|          | 0.00/13.1M [00:00<?, ?B/s][A
+Downloading data:   4%|▍         | 556k/13.1M [00:00<00:02, 5.55MB/s][A
+Downloading data:  71%|███████▏  | 9.33M/13.1M [00:00<00:00, 53.8MB/s][ADownloading data: 100%|██████████| 13.1M/13.1M [00:00<00:00, 57.8MB/s]
+Downloading data files: 100%|██████████| 1/1 [00:01<00:00,  1.52s/it]Downloading data files: 100%|██████████| 1/1 [00:01<00:00,  1.52s/it]
+Extracting data files:   0%|          | 0/1 [00:00<?, ?it/s]Extracting data files: 100%|██████████| 1/1 [00:00<00:00, 268.49it/s]
+Generating train split: 0 examples [00:00, ? examples/s]                                                        Dataset json downloaded and prepared to /home/kosenko/.cache/huggingface/datasets/databricks___json/databricks--databricks-dolly-15k-6e0f9ea7eaa0ee08/0.0.0/fe5dd6ea2639a6df622901539cb550cf8797e5a6b2dd7af1cf934bed8e233e6e. Subsequent calls will reuse this data.
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 681.45it/s]
+Init model. cuda:0
+WARNING:root:For training, the BetterTransformer implementation for m2m_100  architecture currently does not support padding as fused kernels do not support custom attention masks. Beware that passing padded batched training data may result in unexpected outputs.
+Model is initialized.
+  0%|          | 0/15011 [00:00<?, ?it/s]Virgin Australia, the trading name of Virgin Australia Airlines Pty Ltd, is an Australian-based airline. It is the largest airline by fleet size to use the Virgin brand. It commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route. It suddenly found itself as a major airline in Australia's domestic market after the collapse of Ansett Australia in September 2001. The airline has since grown to directly serve 32 cities in Australia, from hubs in Brisbane, Melbourne and Sydney.
+/home/kosenko/miniconda3/lib/python3.10/site-packages/optimum/bettertransformer/models/encoder_models.py:516: UserWarning: The PyTorch API of nested tensors is in prototype stage and will change in the near future. (Triggered internally at ../aten/src/ATen/NestedTensorImpl.cpp:177.)
+  hidden_states = torch._nested_tensor_from_mask(hidden_states, ~attention_mask)
+Virgin Australia, торговое название Virgin Australia Airlines Pty Ltd, является австралийской авиакомпанией. Это крупнейшая авиакомпания по размеру флота, использующая бренд Virgin. Она начала свою деятельность 31 августа 2000 года как Virgin Blue, с двумя самолетами на одном маршруте. Она внезапно оказалась крупной авиакомпанией на внутреннем рынке Австралии после краха Ansett Australia в сентябре 2001 года. С тех пор авиакомпания выросла, чтобы напрямую обслуживать 32 города в Австралии из хабов в Брисбене, Мельбурне и Сиднее.
+----------------------------------------------------------------------------------------------------
+When did Virgin Australia start operating?
+Когда Virgin Australia начала работать?
+----------------------------------------------------------------------------------------------------
+Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route.
+Virgin Australia начала полеты 31 августа 2000 года как Virgin Blue, с двумя самолетами на одном маршруте.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 1/15011 [00:03<14:09:27,  3.40s/it]
+
+----------------------------------------------------------------------------------------------------
+Which is a species of fish? Tope or Rope
+Что это за вид рыбы? Tope или Rope
+----------------------------------------------------------------------------------------------------
+Tope
+Топик
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 2/15011 [00:10<22:13:28,  5.33s/it]
+
+----------------------------------------------------------------------------------------------------
+Why can camels survive for long without water?
+Почему верблюды могут долго обходиться без воды?
+----------------------------------------------------------------------------------------------------
+Camels use the fat in their humps to keep them filled with energy and hydration for long periods of time.
+Верблюды используют жир в своих горбах, чтобы держать их наполненными энергией и увлажнением в течение длительных периодов времени.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 3/15011 [00:17<26:02:15,  6.25s/it]
+
+----------------------------------------------------------------------------------------------------
+Alice's parents have three daughters: Amy, Jessy, and what’s the name of the third daughter?
+У родителей Элис три дочери: Эми, Джесси, и как зовут третью дочь?
+----------------------------------------------------------------------------------------------------
+The name of the third daughter is Alice
+Имя третьей дочери - Алиса
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 4/15011 [00:24<27:18:43,  6.55s/it]Komorida was born in Kumamoto Prefecture on July 10, 1981. After graduating from high school, he joined the J1 League club Avispa Fukuoka in 2000. Although he debuted as a midfielder in 2001, he did not play much and the club was relegated to the J2 League at the end of the 2001 season. In 2002, he moved to the J2 club Oita Trinita. He became a regular player as a defensive midfielder and the club won the championship in 2002 and was promoted in 2003. He played many matches until 2005. In September 2005, he moved to the J2 club Montedio Yamagata. In 2006, he moved to the J2 club Vissel Kobe. Although he became a regular player as a defensive midfielder, his gradually was played less during the summer. In 2007, he moved to the Japan Football League club Rosso Kumamoto (later Roasso Kumamoto) based in his local region. He played as a regular player and the club was promoted to J2 in 2008. Although he did not play as much, he still played in many matches. In 2010, he moved to Indonesia and joined Persela Lamongan. In July 2010, he returned to Japan and joined the J2 club Giravanz Kitakyushu. He played often as a defensive midfielder and center back until 2012 when he retired.
+Коморида родился в префектуре Кумамото 10 июля 1981 года. После окончания средней школы он присоединился к клубу J1 лиги "Ависпа Фукуока" в 2000 году. Хотя он дебютировал в качестве полузащитника в 2001 году, он не играл много, и клуб вылетел в лигу J2 в конце сезона 2001 года. В 2002 году он перешел в клуб J2 "Оита Тринита". Он стал постоянным игроком в качестве опорного полузащитника, и клуб выиграл чемпионат в 2002 году и был повышен в 2003 году. Он сыграл много матчей до 2005 года. В сентябре 2005 года он перешел в клуб J2 "Монтедио Ямагата". В 2006 году он перешел в клуб J2 "Виссел Кобе". Хотя он стал постоянным игроком в качестве опорного полузащитника, его постепенно играли меньше в течение лета. В 2007 году он перешел в клуб Японской футбольной лиги "Россо Кумамото" (позже "Роассо Кумамото"), базирующийся в его местном регионе. Он играл в качестве постоянного игрока, и клуб был повышен до J2 в 2008 году. Хотя он не играл так много, он все же играл во многих матчах. В 2010 году он переехал в Индонезию и присоединился к "Персе Ламан".
+----------------------------------------------------------------------------------------------------
+When was Tomoaki Komorida born?
+Когда родился Томоаки Коморида?
+----------------------------------------------------------------------------------------------------
+Tomoaki Komorida was born on July 10,1981.
+Томоаки Коморида родился 10 июля 1981 года.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 5/15011 [00:32<28:51:33,  6.92s/it]Stalemate is a situation in chess where the player whose turn it is to move is not in check and has no legal move. Stalemate results in a draw. During the endgame, stalemate is a resource that can enable the player with the inferior position to draw the game rather than lose. In more complex positions, stalemate is much rarer, usually taking the form of a swindle that succeeds only if the superior side is inattentive.[citation needed] Stalemate is also a common theme in endgame studies and other chess problems.
+
+The outcome of a stalemate was standardized as a draw in the 19th century. Before this standardization, its treatment varied widely, including being deemed a win for the stalemating player, a half-win for that player, or a loss for that player; not being permitted; and resulting in the stalemated player missing a turn. Stalemate rules vary in other games of the chess family.
+Безвыходное положение - это ситуация в шахматах, когда игрок, чья очередь двигаться, не находится под контролем и не имеет законного хода. Безвыходное положение приводит к ничьей. Во время эндшпиля безвыходное положение - это ресурс, который может позволить игроку с более низкой позицией провести игру, а не проиграть. В более сложных позициях безвыходное положение встречается гораздо реже, обычно принимая форму мошенничества, которое удается только в том случае, если превосходящая сторона невнимательна. Безвыходное положение также является общей темой в исследованиях эндшпиля и других шахматных проблемах. 
+
+ Исход безвыходного положения был стандартизирован как ничья в 19 веке. До этой стандартизации его трактовка сильно различалась, в том числе считалась победой для игрока, находящегося в безвыходном положении, полупобедой для этого игрока или проигрышем для этого игрока; не разрешалась; и в результате игрок, находящийся в безвыходном положении, пропускал ход. Правила безвыходного положения различаются в других играх шахматной семьи.
+----------------------------------------------------------------------------------------------------
+If I have more pieces at the time of stalemate, have I won?
+Если у меня больше фигур во время патовой ситуации, я выиграл?
+----------------------------------------------------------------------------------------------------
+No. 
+Stalemate is a drawn position. It doesn't matter who has captured more pieces or is in a winning position
+Нет. Тупиковая ситуация - это ничейная позиция. Не имеет значения, кто захватил больше фигур или находится в выигрышной позиции
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 6/15011 [00:38<28:40:15,  6.88s/it]Lollapalooza /ˌlɒləpəˈluːzə/ (Lolla) is an annual American four-day music festival held in Grant Park in Chicago. It originally started as a touring event in 1991, but several years later, Chicago became its permanent location. Music genres include but are not limited to alternative rock, heavy metal, punk rock, hip hop, and electronic dance music. Lollapalooza has also featured visual arts, nonprofit organizations, and political organizations. The festival, held in Grant Park, hosts an estimated 400,000 people each July and sells out annually. Lollapalooza is one of the largest and most iconic music festivals in the world and one of the longest-running in the United States.
+
+Lollapalooza was conceived and created in 1991 as a farewell tour by Perry Farrell, singer of the group Jane's Addiction.
+Lollapalooza /lləpəˈluːzə/ (Лолла) - это ежегодный американский четырехдневный музыкальный фестиваль, который проводится в Грант-парке в Чикаго. Первоначально он начался как гастрольное мероприятие в 1991 году, но несколько лет спустя Чикаго стал его постоянным местом. Музыкальные жанры включают, но не ограничиваются альтернативным роком, хэви-металом, панк-роком, хип-хопом и электронной танцевальной музыкой. Lollapalooza также включает изобразительное искусство, некоммерческие организации и политические организации. Фестиваль, который проводится в Грант-парке, принимает около 400 000 человек каждый июль и ежегодно распродается. Lollapalooza - один из крупнейших и самых знаковых музыкальных фестивалей в мире и один из самых продолжительных в Соединенных Штатах. 
+
+ Lollapalooza был задуман и создан в 1991 году как прощальный тур Перри Фаррелла, певца группы Jane's Addiction.
+----------------------------------------------------------------------------------------------------
+Given a reference text about Lollapalooza, where does it take place, who started it and what is it?
+Учитывая справочный текст о Lollapalooza, где он происходит, кто его начал и что это такое?
+----------------------------------------------------------------------------------------------------
+Lollapalooze is an annual musical festival held in Grant Park in Chicago, Illinois. It was started in 1991 as a farewell tour by Perry Farrell, singe of the group Jane's Addiction. The festival includes an array of musical genres including alternative rock, heavy metal, punk rock, hip hop, and electronic dance music. The festivals welcomes an estimated 400,000 people each year and sells out annually. Some notable headliners include: the Red Hot Chili Peppers, Chance the Rapper, Metallica, and Lady Gage. Lollapalooza is one of the largest and most iconic festivals in the world and a staple of Chicago.
+Lollapalooze - это ежегодный музыкальный фестиваль, проводимый в Грант-парке в Чикаго, штат Иллинойс. Он был основан в 1991 году в качестве прощального тура Перри Фаррелла, певца группы Jane's Addiction. Фестиваль включает в себя множество музыкальных жанров, включая альтернативный рок, хэви-метал, панк-рок, хип-хоп и электронную танцевальную музыку. Фестиваль принимает около 400 000 человек каждый год и ежегодно распродается. Некоторые известные хедлайнеры включают: Red Hot Chili Peppers, Chance the Rapper, Metallica и Lady Gage. Lollapalooza - один из крупнейших и самых знаковых фестивалей в мире и основной продукт Чикаго.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 7/15011 [00:47<31:39:01,  7.59s/it]
+
+----------------------------------------------------------------------------------------------------
+Who gave the UN the land in NY to build their HQ
+Кто дал ООН землю в Нью-Йорке для строительства штаб-квартиры
+----------------------------------------------------------------------------------------------------
+John D Rockerfeller
+Джон Д. Рокфеллер
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 8/15011 [00:54<30:51:45,  7.41s/it]
+
+----------------------------------------------------------------------------------------------------
+Why mobile is bad for human
+Почему мобильный телефон вреден для человека
+----------------------------------------------------------------------------------------------------
+We are always engaged one phone which is not good.
+Мы всегда заняты одним телефоном, что нехорошо.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 9/15011 [01:01<30:13:55,  7.25s/it]John Moses Browning (January 23, 1855 – November 26, 1926) was an American firearm designer who developed many varieties of military and civilian firearms, cartridges, and gun mechanisms – many of which are still in use around the world. He made his first firearm at age 13 in his father's gun shop and was awarded the first of his 128 firearm patents on October 7, 1879, at the age of 24. He is regarded as one of the most successful firearms designers of the 19th and 20th centuries and pioneered the development of modern repeating, semi-automatic, and automatic firearms.
+
+Browning influenced nearly all categories of firearms design, especially the autoloading of ammunition. He invented, or made significant improvements to, single-shot, lever-action, and pump-action rifles and shotguns. He developed the first reliable and compact autoloading pistols by inventing the telescoping bolt, then integrating the bolt and barrel shroud into what is known as the pistol slide. Browning's telescoping bolt design is now found on nearly every modern semi-automatic pistol, as well as several modern fully automatic weapons. He also developed the first gas-operated firearm, the Colt–Browning Model 1895 machine gun – a system that surpassed mechanical recoil operation to become the standard for most high-power self-loading firearm designs worldwide. He also made significant contributions to automatic cannon development.
+
+Browning's most successful designs include the M1911 pistol, the water-cooled M1917, the air-cooled M1919, and heavy M2 machine guns, the M1918 Browning Automatic Rifle, and the Browning Auto-5 – the first semi-automatic shotgun. Some of these arms are still manufactured, often with only minor changes in detail and cosmetics to those assembled by Browning or his licensees. The Browning-designed M1911 and Hi-Power are some of the most copied firearms in the world.
+Джон Мозес Браунинг (23 января 1855 - 26 ноября 1926) был американским конструктором огнестрельного оружия, который разработал множество разновидностей военного и гражданского огнестрельного оружия, патронов и оружейных механизмов, многие из которых до сих пор используются во всем мире. Он сделал свое первое огнестрельное оружие в возрасте 13 лет в оружейной лавке своего отца и получил первый из своих 128 патентов на огнестрельное оружие 7 октября 1879 года, в возрасте 24 лет. Он считается одним из самых успешных дизайнеров огнестрельного оружия 19-го и 20-го веков и стал пионером в разработке современного повторяющегося, полуавтоматического и автоматического огнестрельного оружия. Браунинг повлиял почти на все категории дизайна огнестрельного оружия, особенно на автоматическую загрузку боеприпасов. Он изобрел или внес значительные улучшения в однозарядные, рычажные и помповые винтовки и ружья. Он разработал первые надежные и компактные пистолеты с автоматической загрузкой, изобретя телескопический затвор, а затем интегрировал затвор и кожух ствола в то, что сейчас известно как самозарядный пистолет со скользящим затвором.
+----------------------------------------------------------------------------------------------------
+Who was John Moses Browning?
+Кто такой Джон Мозес Браунинг?
+----------------------------------------------------------------------------------------------------
+John Moses Browning is one of the most well-known designer of modern firearms.  He started building firearms in his father's shop at the age of 13, and was awarded his first patent when he was 24.
+
+He  designed the first reliable automatic pistol, and the first gas-operated firearm, as well inventing or improving single-shot, lever-action, and pump-action rifles and shotguns.
+
+Today, he is most well-known for the M1911 pistol, the Browning Automatic Rifle, and the Auto-5 shotgun, all of which are in still in current production in either their original design, or with minor changes.  His M1911 and Hi-Power pistols designs are some of the most reproduced firearms in the world today.
+Джон Мозес Браунинг - один из самых известных конструкторов современного огнестрельного оружия. Он начал строить огнестрельное оружие в магазине своего отца в возрасте 13 лет и получил свой первый патент, когда ему было 24 года. Он разработал первый надежный автоматический пистолет и первое газовое огнестрельное оружие, а также изобрел или улучшил однозарядные, рычажные и помповые винтовки и дробовики. Сегодня он наиболее известен пистолетом M1911, автоматической винтовкой Браунинга и дробовиком Auto-5, все из которых все еще находятся в текущем производстве либо в их оригинальной конструкции, либо с небольшими изменениями. Его конструкции пистолетов M1911 и Hi-Power являются одними из самых воспроизводимых огнестрельных оружий в мире сегодня.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 10/15011 [01:12<34:06:25,  8.19s/it]Thomas Jefferson (April 13, 1743 – July 4, 1826) was an American statesman, diplomat, lawyer, architect, philosopher, and Founding Father who served as the third president of the United States from 1801 to 1809. Among the Committee of Five charged by the Second Continental Congress with authoring the Declaration of Independence, Jefferson was the Declaration's primary author. Following the American Revolutionary War and prior to becoming the nation's third president in 1801, Jefferson was the first United States secretary of state under George Washington and then the nation's second vice president under John Adams.
+Томас Джефферсон (13 апреля 1743 г. - 4 июля 1826 г.) был американским государственным деятелем, дипломатом, юристом, архитектором, философом и отцом-основателем, который служил третьим президентом Соединенных Штатов с 1801 по 1809 год. Среди Комитета пяти, которому Второй Континентальный конгресс поручил написать Декларацию независимости, Джефферсон был основным автором Декларации. После американской войны за независимость и до того, как стать третьим президентом страны в 1801 году, Джефферсон был первым государственным секретарем Соединенных Штатов при Джордже Вашингтоне, а затем вторым вице-президентом страны при Джоне Адамсе.
+----------------------------------------------------------------------------------------------------
+Who is Thomas Jefferson?
+Кто такой Томас Джефферсон?
+----------------------------------------------------------------------------------------------------
+Thomas Jefferson (April 13, 1743 – July 4, 1826) was an American statesman, diplomat, lawyer, architect, philosopher, and Founding Father who served as the third president of the United States from 1801 to 1809. Among the Committee of Five charged by the Second Continental Congress with authoring the Declaration of Independence, Jefferson was the Declaration's primary author. Following the American Revolutionary War and prior to becoming the nation's third president in 1801, Jefferson was the first United States secretary of state under George Washington and then the nation's second vice president under John Adams.
+
+Among the nation's Founding Fathers, Jefferson is considered unmatched in his intellectual depth and breadth. His passionate writings and advocacy for human rights, including freedom of thought, speech, and religion, were a leading inspiration behind the American Revolution, which ultimately gave rise to the American Revolutionary War, American independence, and the United States Constitution. Jefferson's ideas were globally influential in shaping and inspiring the Age of Enlightenment, which proved transformational in the late 17th and 18th centuries. He was a leading proponent of democracy, republicanism, and individual rights, and produced formative documents and decisions at the state, national, and international levels.
+
+During the American Revolution, Jefferson represented Virginia in the Second Continental Congress in Philadelphia, which adopted the Declaration of Independence on July 4, 1776. As a Virginia legislator, he drafted a state law for religious freedom. He served as the second Governor of Virginia from 1779 to 1781, during the Revolutionary War. In 1785, Jefferson was appointed the United States Minister to France, and subsequently, the nation's first secretary of state under President George Washington from 1790 to 1793. Jefferson and James Madison organized the Democratic-Republican Party to oppose the Federalist Party during the formation of the First Party System. With Madison, he anonymously wrote the Kentucky and Virginia Resolutions in 1798 and 1799, which sought to strengthen states' rights by nullifying the federal Alien and Sedition Acts.
+
+Jefferson and Federalist John Adams became friends as well as political rivals, serving in the Continental Congress and drafting the Declaration of Independence together. In the 1796 presidential election between the two, Jefferson came in second, which according to electoral procedure at the time, made him vice president to Adams. Jefferson challenged Adams again in 1800 and won the presidency. After his term in office, Jefferson eventually reconciled with Adams and they shared a correspondence that lasted 14 years. He and Adams both died on the same day, July 4, 1826, which was also the 50th anniversary of Declaration of Independence.
+
+As president, Jefferson pursued the nation's shipping and trade interests against Barbary pirates and aggressive British trade policies. Starting in 1803, he promoted a western expansionist policy with the Louisiana Purchase, which doubled the nation's claimed land area. To make room for settlement, Jefferson began the process of Indian tribal removal from the newly acquired territory. As a result of peace negotiations with France, his administration reduced military forces. He was re-elected in 1804, but his second term was beset with difficulties at home, including the trial of former vice president Aaron Burr. In 1807, American foreign trade was diminished when Jefferson implemented the Embargo Act in response to British threats to U.S. shipping. The same year, Jefferson signed the Act Prohibiting Importation of Slaves.
+
+Jefferson was a plantation owner, lawyer, and politician, and mastered many disciplines including surveying, mathematics, horticulture, and mechanics. He was also an architect in the Palladian tradition. Jefferson's keen interest in religion and philosophy led to his appointment as president of the American Philosophical Society. He largely shunned organized religion but was influenced by Christianity, Epicureanism, and deism. Jefferson rejected fundamental Christianity, denying Christ's divinity. A philologist, Jefferson knew several languages. He was a prolific letter writer and corresponded with many prominent people, including Edward Carrington, John Taylor of Caroline, and James Madison. In 1785, Jefferson authored Notes on the State of Virginia, considered perhaps the most important American book published before 1800. Jefferson championed the ideals, values, and teachings of the Enlightenment.
+
+Since the 1790s, Jefferson was rumored to have had children by his sister-in-law and slave Sally Hemings, leading to what is known as the Jefferson-Hemings controversy. A 1998 DNA test concluded that one of Sally Hemings's children, Eston Hemings, was of the Jefferson male line. According to scholarly consensus, based on documentary and statistical evaluation, as well as oral history, Jefferson probably fathered at least six children with Hemings, including four that survived to adulthood.
+
+After retiring from public office, Jefferson founded the University of Virginia. Presidential scholars and historians generally praise Jefferson's public achievements, including his advocacy of religious freedom and tolerance in Virginia, his peaceful acquisition of the Louisiana Territory from France without war or controversy, and his ambitious and successful Lewis and Clark Expedition. Some modern historians are critical of Jefferson's personal involvement with slavery. Jefferson is consistently ranked among the top ten presidents of American history.
+Томас Джефферсон (13-го апреля 1743 г. - 4-го июля 1826 г.) После того, как Джефферсон стал президентом-основателем штата Луизиана, он последовательно отстаивал интересы индейцев. После того, как Джефферсон стал президентом-основателем штата Луизиана, он был первым государственным секретарем Соединенных Штатов при Джордже Вашингтоне, а затем вторым вице-президентом страны при Джоне Адамсе. Он оспаривал законы о торговле и демократии, которые были приняты в 180-м году, и в конечном итоге стал вице-президентом. Его страстные труды и выступления в защиту прав человека, включая свободу мысли, слова и религии, были основным источником вдохновения для Американской революции, которая в конечном итоге привела к Американской войне за независимость и Конституции Соединенных Штатов. После войны за независимость и до того, как стать третьим президентом страны в 1801 году, Джефферсон был первым государственным секретарем Соединенных Штатов при Джордже Вашингтоне, а затем вторым вице-президентом страны при Джоне Адамсе. Он начал оказывать глобальное влияние на формирование и пропаганду идей эпохи Просвещения, от Джорджа Вашингтона до второго президента-основателя штата Вирджиния, Джорджа Вашингтона.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 11/15011 [01:21<36:07:12,  8.67s/it]Van Zyl joined the Eastern Province Kings Academy, where he played for the Eastern Province U19 side in the 2010 Under-19 Provincial Championship. He was a key player for the Eastern Province U21 side in the 2012 Under-21 Provincial Championship, scoring 71 points in eight appearances. Van Zyl was under the Top SARU Performers, scoring the most tries at 6 in the 2012 Provincial Under 21 in the Rugby Junior Provincials.
+
+This included a record and a remarkable personal haul in their opening match, when he scored 36 of his team's points in a 61–3 victory over Boland U21, consisting of four tries and eight conversions and was awarded Man of the Match.
+Ван Зил присоединился к Академии Королей Восточной Провинции, где он играл за команду Восточной Провинции U19 в Провинциальном Чемпионате 2010 года до 19 лет. Он был ключевым игроком команды Восточной Провинции U21 в Провинциальном Чемпионате 2012 года до 21 года, набрав 71 очко в восьми матчах. Ван Зил был в числе лучших исполнителей SARU, набрав наибольшее количество попыток в 6 в Провинциальном Чемпионате 2012 года до 21 года в юниорах-провинциалах по регби.
+
+Это включало в себя рекорд и замечательный личный улов в их стартовом матче, когда он набрал 36 очков своей команды в победе 61-3 над Боландом U21, состоящей из четырех попыток и восьми конверсий, и был удостоен звания "Человек матча".
+----------------------------------------------------------------------------------------------------
+Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?
+Против кого играл Кайл Ван Зил, когда он набрал 36 из 61 очка своей команды?
+----------------------------------------------------------------------------------------------------
+Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win.
+Кайл Ван Зил играл против Боланда U21, когда он набрал 36 очков, приведя свою команду к победе со счетом 61-3.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 12/15011 [01:27<32:06:32,  7.71s/it]Dar es Salaam (/ˌdɑːr ɛs səˈlɑːm/; from Arabic: دَار السَّلَام, romanized: Dâr es-Selâm, lit. 'Abode of Peace') or commonly known as Dar, is the largest city and financial hub of Tanzania. It is also the capital of Dar es Salaam Region. With a population of over six million people, Dar is the largest city in East Africa and the seventh-largest in Africa. Located on the Swahili coast, Dar es Salaam is an important economic centre and is one of the fastest-growing cities in the world.
+
+The town was founded by Majid bin Said, the first Sultan of Zanzibar, in 1865 or 1866. It was the main administrative and commercial center of German East Africa, Tanganyika, and Tanzania. The decision was made in 1974 to move the capital to Dodoma and was officially completed in 1996.
+
+Dar es Salaam is Tanzania's most prominent city for arts, fashion, media, film, television, and finance. It is the capital of the co-extensive Dar es Salaam Region, one of Tanzania's 31 administrative regions, and consists of five districts: Kinondoni in the north; Ilala in the centre; Ubungo and Temeke in the south; and Kigamboni in the east across the Kurasini estuary.
+Дар-эс-Салам (/dːr ɛs səˈlːm/; с арабского: دَار السَّلَام, латинизировано: Dâr es-Selâm, букв. "Обитель мира") или широко известный как Дар, является крупнейшим городом и финансовым центром Танзании. Это также столица региона Дар-эс-Салам. С населением более шести миллионов человек, Дар-эс-Салам является крупнейшим городом в Восточной Африке и седьмым по величине в Африке. Расположенный на побережье Суахили, Дар-эс-Салам является важным экономическим центром и является одним из самых быстрорастущих городов в мире. Город был основан Маджидом бен Саидом, первым султаном Занзибара, в 1865 или 1866 году. Это был главный административный и торговый центр Германской Восточной Африки, Танганьики и Танзании. Решение было принято в 1974 году перенести столицу в Додому и было официально завершено в 1996 году. Дар-эс-Салам является самым известным городом Танзании для искусства, моды, средств массовой информации, кино и финансов.
+----------------------------------------------------------------------------------------------------
+From the passage list down the areas for which Dar es Salaam is Tanzania's most prominent city. List the results in comma separated format.
+Из отрывка перечислите области, для которых Дар-эс-Салам является самым известным городом Танзании. Перечислите результаты в формате, разделенном запятыми.
+----------------------------------------------------------------------------------------------------
+arts, fashion, media, film, television, finance
+искусство, мода, СМИ, кино, телевидение, финансы
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 13/15011 [01:34<32:00:40,  7.68s/it]
+
+----------------------------------------------------------------------------------------------------
+What is a polygon?
+Что такое полигон?
+----------------------------------------------------------------------------------------------------
+A polygon is a form in Geometry.  It is a single dimensional plane made of connecting lines and any number of vertices.  It is a closed chain of connected line segments or edges.  The vertices of the polygon are formed where two edges meet.  Examples of polygons are hexagons, pentagons, and octagons.  Any plane that does not contain edges or vertices is not a polygon.  An example of a non-polygon is a circle.
+Многоугольник - это форма в геометрии. Это одномерная плоскость, состоящая из соединительных линий и любого количества вершин. Это замкнутая цепь связанных отрезков линий или рёбер. Вершины многоугольника образуются там, где встречаются два ребра. Примерами многоугольников являются шестиугольники, пятиугольники и восьмиугольники. Любая плоскость, которая не содержит рёбер или вершин, не является многоугольником. Примером неполигона является круг.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 14/15011 [01:43<33:33:56,  8.06s/it]
+
+----------------------------------------------------------------------------------------------------
+How do I start running?
+Как мне начать бегать?
+----------------------------------------------------------------------------------------------------
+Make sure you get comfortable running shoes and attire. Start with achievable goal in mind like a 5K race. If you never ran before, start gradually from a walk, to brisk walk, light jog aiming for 15-30mins initially. Slowly increase your running time and distance as your fitness level improves. One of the most important things is cool down and gentle stretching. Always listen to your body, and take rest days when needed to prevent injury.
+Убедитесь, что у вас удобная обувь и одежда для бега. Начните с достижимой цели, например, с забега на 5 км. Если вы никогда не бегали раньше, начинайте постепенно от ходьбы, быстрой ходьбы, легкой пробежки, стремясь к 15-30 минутам в начале. Медленно увеличивайте время бега и дистанцию по мере улучшения вашего уровня физической подготовки. Одна из самых важных вещей - это охлаждение и легкая растяжка. Всегда слушайте свое тело и отдыхайте, когда это необходимо, чтобы предотвратить травмы.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 15/15011 [01:52<34:38:22,  8.32s/it]
+
+----------------------------------------------------------------------------------------------------
+Which episodes of season four of Game of Thrones did Michelle MacLaren direct?
+Какие эпизоды четвертого сезона "Игры престолов" срежиссировала Мишель МакЛарен?
+----------------------------------------------------------------------------------------------------
+She directed "Oathkeeper" and "First of His Name" the fourth and fifth episodes of season four, respectively.
+Она срежиссировала "Хранителя клятвы" и "Первого его имени" - четвертый и пятый эпизоды четвертого сезона соответственно.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 16/15011 [02:00<33:34:39,  8.06s/it]Process mining is a family of techniques relating the fields of data science and process management to support the analysis of operational processes based on event logs. The goal of process mining is to turn event data into insights and actions. Process mining is an integral part of data science, fueled by the availability of event data and the desire to improve processes.Process mining techniques use event data to show what people, machines, and organizations are really doing. Process mining provides novel insights that can be used to identify the executional path taken by operational processes and address their performance and compliance problems.
+
+Process mining starts from event data. Input for process mining is an event log. An event log views a process from a particular angle. Each event in the log should contain (1) a unique identifier for a particular process instance (called case id), (2) an activity (description of the event that is occurring), and (3) a timestamp. There may be additional event attributes referring to resources, costs, etc., but these are optional. With some effort, such data can be extracted from any information system supporting operational processes. Process mining uses these event data to answer a variety of process-related questions.
+Process Mining - это семейство методов, связанных с областями науки о данных и управления процессами для поддержки анализа операционных процессов на основе журналов событий. Цель Process Mining - превратить данные о событиях в идеи и действия. Process Mining - неотъемлемая часть науки о данных, подпитываемая доступностью данных о событиях и желанием улучшить процессы. Методы Process Mining используют данные о событиях, чтобы показать, что на самом деле делают люди, машины и организации. Process Mining предоставляет новые идеи, которые можно использовать для определения пути выполнения операционных процессов и решения их проблем с производительностью и соответствием. 
+
+Process Mining начинается с данных о событиях. Вход для Process Mining - это журнал событий. Журнал событий рассматривает процесс под определенным углом. Каждое событие в журнале должно содержать (1) уникальный идентификатор для конкретного экземпляра процесса (так называемый идентификатор случая), (2) активность (описание происходящего события) и (3) метку времени. Могут быть дополнительные атрибуты событий, относящиеся к ресурсам, затратам и т. Д., Но они не являются обязательными. С некоторыми усилиями такие данные могут быть извлечены из любой информационной системы, поддерживающей операционные процессы. Process Mining использует эти данные для ответа на различные вопросы, связанные с процессом.
+----------------------------------------------------------------------------------------------------
+What is process mining?
+Что такое Process Mining?
+----------------------------------------------------------------------------------------------------
+Process mining brings together data mining, data science and process management to find process efficiencies.
+Процессный анализ объединяет интеллектуальный анализ данных, науку о данных и управление процессами, чтобы найти эффективность процессов.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 17/15011 [02:06<31:39:05,  7.60s/it]
+
+----------------------------------------------------------------------------------------------------
+What are some unique curtain tie backs that you can make yourself?
+Какие есть уникальные занавески-галстуки, которые вы можете сделать сами?
+----------------------------------------------------------------------------------------------------
+There are many items you can use to make a curtain tie back. Some ideas for this include a chain, a circle and pin, jute rope, wooden beaded rope, a necklack or bracelet, a door knob, a length of a leather belt, macrame rope, or a string of artificial flowers.
+Есть много предметов, которые вы можете использовать, чтобы завязать занавеску. Некоторые идеи для этого включают цепь, круг и булавку, джут-веревку, деревянную бисерную веревку, ожерелье или браслет, дверную ручку, длину кожаного ремня, веревку макраме или нитку искусственных цветов.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 18/15011 [02:15<32:43:25,  7.86s/it]In optics, a dispersive prism is an optical prism that is used to disperse light, that is, to separate light into its spectral components (the colors of the rainbow). Different wavelengths (colors) of light will be deflected by the prism at different angles. This is a result of the prism material's index of refraction varying with wavelength (dispersion). Generally, longer wavelengths (red) undergo a smaller deviation than shorter wavelengths (blue). The dispersion of white light into colors by a prism led Sir Isaac Newton to conclude that white light consisted of a mixture of different colors.
+В оптике дисперсионная призма - это оптическая призма, которая используется для рассеивания света, то есть для разделения света на его спектральные компоненты (цвета радуги). Различные длины волн (цвета) света будут отклоняться призмой под разными углами. Это результат того, что показатель преломления материала призмы изменяется с длиной волны (дисперсия). Как правило, более длинные волны (красные) претерпевают меньшее отклонение, чем более короткие волны (синие). Дисперсия белого света на цвета призмой привела сэра Исаака Ньютона к выводу, что белый свет состоит из смеси разных цветов.
+----------------------------------------------------------------------------------------------------
+What is a dispersive prism?
+Что такое дисперсионная призма?
+----------------------------------------------------------------------------------------------------
+A dispersive prism is an optical prism that disperses the light's different wavelengths at different angles. When white light is shined through a dispersive prism it will separate into the different colors of the rainbow.
+Дисперсионная призма - это оптическая призма, которая рассеивает различные длины волн света под разными углами. Когда белый свет пропускается через дисперсионную призму, он разделяется на различные цвета радуги.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 19/15011 [02:19<28:34:22,  6.86s/it]
+
+----------------------------------------------------------------------------------------------------
+Identify which instrument is string or percussion: Cantaro, Gudok
+Определите, какой инструмент струнный или ударный: кантаро, гудок
+----------------------------------------------------------------------------------------------------
+Gudok is string, Cantaro is percussion.
+Гудок - струнные, Кантаро - ударные.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 20/15011 [02:26<28:46:56,  6.91s/it]
+
+----------------------------------------------------------------------------------------------------
+Give me the top 5 golf equipment company names.
+Назовите пять крупнейших компаний, производящих оборудование для гольфа.
+----------------------------------------------------------------------------------------------------
+Titleist, Taylormade, Callaway, Ping, Cobra
+Titleist, Taylormade, Callaway, Ping, Cobra и другие
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 21/15011 [02:33<29:00:56,  6.97s/it]
+
+----------------------------------------------------------------------------------------------------
+What individual has won the most Olympic gold medals in the history of the games?
+Кто из спортсменов завоевал наибольшее количество золотых олимпийских медалей за всю историю Игр?
+----------------------------------------------------------------------------------------------------
+Michael Phelps has won the most gold medals of all time with 23 golds.
+Майкл Фелпс завоевал наибольшее количество золотых медалей всех времен с 23 золотыми.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 22/15011 [02:41<29:17:38,  7.04s/it]
+
+----------------------------------------------------------------------------------------------------
+Which Dutch artist painted “Girl with a Pearl Earring”?
+Какой голландский художник написал картину "Девушка с жемчужной сережкой"?
+----------------------------------------------------------------------------------------------------
+Vermeer
+Вермеер
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 23/15011 [02:48<29:08:57,  7.00s/it]
+
+----------------------------------------------------------------------------------------------------
+What happens when the sun goes down?
+Что происходит, когда солнце садится?
+----------------------------------------------------------------------------------------------------
+When the sun sets, the evening starts.
+Когда солнце садится, начинается вечер.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 24/15011 [02:54<28:45:50,  6.91s/it]
+
+----------------------------------------------------------------------------------------------------
+What is a verb?
+Что такое глагол?
+----------------------------------------------------------------------------------------------------
+A verb is an action word that describes an activity.  Examples of verbs are the following: swimming, hiking, biking, roller skating, or skydiving.  All of these single and combination word examples are tied to an activity that any living thing can do.  For example, a dog can bike ride with a human when the human is pedaling the bike.  Verb use is not limited to humans or people only but applies to all living things.
+Глагол - это слово действия, которое описывает деятельность. Примерами глаголов являются следующие: плавание, походы, езда на велосипеде, катание на роликовых коньках или прыжки с парашютом. Все эти примеры отдельных и комбинированных слов связаны с деятельностью, которую может выполнять любое живое существо. Например, собака может кататься на велосипеде вместе с человеком, когда человек крутит педали велосипеда. Использование глаголов не ограничивается людьми или только людьми, а применяется ко всем живым существам.
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 25/15011 [03:03<31:17:37,  7.52s/it]Automobili Lamborghini S.p.A. (Italian pronunciation: [autoˈmɔːbili lamborˈɡiːni]) is an Italian manufacturer of luxury sports cars and SUVs based in Sant'Agata Bolognese. The company is owned by the Volkswagen Group through its subsidiary Audi.
+
+Ferruccio Lamborghini (1916–1993), an Italian manufacturing magnate, founded Automobili Ferruccio Lamborghini S.p.A. in 1963 to compete with Ferrari. The company was noted for using a rear mid-engine, rear-wheel drive layout. Lamborghini grew rapidly during its first decade, but sales plunged in the wake of the 1973 worldwide financial downturn and the oil crisis. The firm's ownership changed three times after 1973, including a bankruptcy in 1978. American Chrysler Corporation took control of Lamborghini in 1987 and sold it to Malaysian investment group Mycom Setdco and Indonesian group V'Power Corporation in 1994. In 1998, Mycom Setdco and V'Power sold Lamborghini to the Volkswagen Group where it was placed under the control of the group's Audi division.
+
+New products and model lines were introduced to the brand's portfolio and brought to the market and saw an increased productivity for the brand. In the late 2000s, during the worldwide financial crisis and the subsequent economic crisis, Lamborghini's sales saw a drop of nearly 50 per cent.
+
+Lamborghini currently produces the V12-powered Aventador and the V10-powered Huracán, along with the Urus SUV powered by a twin-turbo V8 engine. In addition, the company produces V12 engines for offshore powerboat racing.
+
+Lamborghini Trattori, founded in 1948 by Ferruccio Lamborghini, is headquartered in Pieve di Cento, Italy and continues to produce tractors. Since 1973, Lamborghini Trattori has been a separate entity from the automobile manufacturer.
+
+History
+Main article: History of Lamborghini
+
+Ferruccio Lamborghini with a Jarama and a tractor of his brand
+Manufacturing magnate Italian Ferruccio Lamborghini founded the company in 1963 with the objective of producing a refined grand touring car to compete with offerings from established marques such as Ferrari. The company's first models, such as the 350 GT, were released in the mid-1960s. Lamborghini was noted for the 1966 Miura sports coupé, which used a rear mid-engine, rear-wheel drive layout.
+
+Lamborghini grew rapidly during its first ten years, but sales fell in the wake of the 1973 worldwide financial downturn and the oil crisis. Ferruccio Lamborghini sold the company to Georges-Henri Rossetti and René Leimer and retired in 1974. The company went bankrupt in 1978, and was placed in the receivership of brothers Jean-Claude and Patrick Mimran in 1980. The Mimrans purchased the company out of receivership by 1984 and invested heavily in its expansion. Under the Mimrans' management, Lamborghini's model line was expanded from the Countach to include the Jalpa sports car and the LM002 high-performance off-road vehicle.
+
+The Mimrans sold Lamborghini to the Chrysler Corporation in 1987. After replacing the Countach with the Diablo and discontinuing the Jalpa and the LM002, Chrysler sold Lamborghini to Malaysian investment group Mycom Setdco and Indonesian group V'Power Corporation in 1994. In 1998, Mycom Setdco and V'Power sold Lamborghini to the Volkswagen Group where it was placed under the control of the group's Audi division. New products and model lines were introduced to the brand's portfolio and brought to the market and saw an increased productivity for the brand Lamborghini. In the late 2000s, during the worldwide financial crisis and the subsequent economic crisis, Lamborghini's sales saw a drop of nearly 50 per cent.
+
+In 2021, the CEO of Lamborghini said that by 2024 all its models will be hybrid.
+
+Automobiles produced
+Lamborghini Motorsport Division Squadra Corse produces GT3 cars and cars for their Super Trofeo events based on the Gallardo and Huracán. Apart from them, the Squadra Corse builds cars upon customer request.
+
+GT3 and Super Trofeo Cars
+Gallardo LP 570-4 Super Trofeo
+Gallardo LP 560-4 Super Trofeo
+Huracán LP 620-2 Super Trofeo EVO
+Huracán LP 620-2 Super Trofeo EVO2
+Huracán Super Trofeo GT2
+Huracán GT3
+Huracán GT3 Evo
+Huracán GT3 Evo 2
+Special cars
+These cars were built by Squadra Corse upon customer request.
+
+Essenza SCV12
+SC18 Alston
+SC20
+Automobili Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгини (1916 - 1993), итальянским промышленным магнатом, в 1963 году основала компанию Automobili Ferruccio Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгини (1916 - 1993), итальянским промышленным магнатом, в 1963 году основала компанию Automobili Ferruccio Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгини (1916 - 1993), итальянским промышленным магнатом, в 1963 году основала компанию Automobili Ferruccio Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгини (1916 - 1993), итальянским промышленным магнатом, в 1963 году основала компанию Automobili Ferruccio Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгини (1916 - 1993), итальянским промышленным магнатом, в 1963 году основала компанию Automobili Ferruccio Lamborghini S.p.A. Основанная Патриком Хёрруччо Ламборгинио (1916 - 1978)
+----------------------------------------------------------------------------------------------------
+Extract the owner of Lamborghini and a listing of the different types of Huracan cars that Lamborghini has produced for its Motorsport division.
+Извлеките владельца Lamborghini и список различных типов автомобилей Huracan, которые Lamborghini произвела для своего подразделения Motorsport.
+----------------------------------------------------------------------------------------------------
+Vokswagen Group owns Lamborghini through its subsidiary, Audi.
+
+Lamborghini has produced the following Huracan motorsport models:
+- Huracán LP 620-2 Super Trofeo EVO
+- Huracán LP 620-2 Super Trofeo EVO2
+- Huracán Super Trofeo GT2
+- Huracán GT3
+- Huracán GT3 Evo
+- Huracán GT3 Evo 2
+Vokswagen Group владеет Lamborghini через свою дочернюю компанию Audi.
+
+Lamborghini произвела следующие модели автоспорта Huracan:
+- Huracán LP 620-2 Super Trofeo EVO
+- Huracán LP 620-2 Super Trofeo EVO2
+- Huracán Super Trofeo GT2
+- Huracán GT3
+- Huracán GT3 Evo
+- Huracán GT3 Evo 2
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+  0%|          | 26/15011 [03:13<34:31:15,  8.29s/it]

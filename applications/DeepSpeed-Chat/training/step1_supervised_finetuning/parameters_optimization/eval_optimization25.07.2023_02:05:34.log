@@ -1,0 +1,367 @@
+Some weights of XGLMForCausalLM were not initialized from the model checkpoint at facebook/xglm-4.5B and are newly initialized: ['model.embed_positions.weights']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Found cached dataset parquet (/home/kosenko/.cache/huggingface/datasets/dim___parquet/dim--mt_bench_en-40a2837a0335d6fc/0.0.0/2a3b91fbd88a2c90d1dbbb32b460cf621d31bd5b05b934492fdef7d8d6f236ec)
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 146.17it/s]
+[I 2023-07-25 02:06:31,011] A new study created in memory with name: no-name-6f2936a2-8658-4e88-bcef-286fb3740463
+/cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/parameters_optimization/optuna_xglm.py:166: ExperimentalWarning: WeightsAndBiasesCallback is experimental (supported from v2.9.0). The interface can change in the future.
+  wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+wandb: Currently logged in as: dimweb. Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.15.5 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.15.4
+wandb: Run data is saved locally in /cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/parameters_optimization/wandb/run-20230725_020632-noyzwc89
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run splendid-lion-1
+wandb: ⭐️ View project at https://wandb.ai/dimweb/generation_optuna
+wandb: 🚀 View run at https://wandb.ai/dimweb/generation_optuna/runs/noyzwc89
+
+        PROMPT: Compose an engaging travel blog post about a recent trip to Hawaii, highlighting cultural experiences and must-see attractions.
+        RESULT: Hawaii, a Hawaiian island, is a must-see travel destination. Hawaii is a cultural and a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is a cultural destination. Hawaii is
+        
+SCORE -5.262490272521973
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Draft a professional email seeking your supervisor's feedback on the 'Quarterly Financial Report' you prepared. Ask specifically about the data analysis, presentation style, and the clarity of conclusions drawn. Keep the email short and to the point.
+        RESULT: Dear [Your supervisor's name], I'm writing to you to request feedback on the [Quarterly Financial Report] you prepared. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'm a professional data analysis and presentation professional, and I'm writing to you to request your feedback on the [Quarterly Financial Report]. I'
+        
+SCORE -4.142273426055908
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Imagine you are writing a blog post comparing two popular smartphone models. Develop an outline for the blog post, including key points and subheadings to effectively compare and contrast the features, performance, and user experience of the two models. Please answer in fewer than 200 words.
+        RESULT: Imagine you are writing a blog post comparing two popular smartphone models. Develop an outline for the blog post, including key points and subheadings to effectively compare and contrast the features, performance, and user experience of the two models. Please answer in fewer than 200 words.
+        
+SCORE -2.3876419067382812
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Write a persuasive email to convince your introverted friend, who dislikes public speaking, to volunteer as a guest speaker at a local event. Use compelling arguments and address potential objections. Please be concise.
+        RESULT: Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible. Please be as concise as possible.
+        
+SCORE -4.713375568389893
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Describe a vivid and unique character, using strong imagery and creative language. Please answer in fewer than two paragraphs.
+        RESULT: I'm a language model, and I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language model. I'm a language model, and I'm a language model, and I'm a language
+        
+SCORE -5.184545040130615
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Write a descriptive paragraph about a bustling marketplace, incorporating sensory details such as smells, sounds, and visual elements to create an immersive experience for the reader.
+        RESULT: The bustling marketplace smells and sounds as the sounds and smells of the marketplace mingle. The smells of the marketplace, and the sounds of the marketplace, mingle to create a sensory experience. The sounds of the marketplace, and the smells of the marketplace, mingle to create a visual experience. The sounds of the marketplace, and the smells of the marketplace, mingle to create a sensory experience.
+        
+SCORE 0.5680486559867859
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Could you write a captivating short story beginning with the sentence: The old abandoned house at the end of the street held a secret that no one had ever discovered.
+        RESULT: The old abandoned house at the end of the street held a secret that no one had ever discovered. The house had a secret that no one had ever discovered, a secret that had no one ever discovered.
+        
+SCORE -1.7791234254837036
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Craft an intriguing opening paragraph for a fictional short story. The story should involve a character who wakes up one morning to find that they can time travel.
+        RESULT: The morning sun peeks up through a crack in a canopy, a glimmering, glimmering, glimmering. The character wakes up to find that they can time travel. The character can travel to a time in the past, a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character can travel to a time in the past that they can travel to. The character
+        
+SCORE -3.5808639526367188
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Help me construct a catchy, yet scientifically accurate, headline for an article on the latest discovery in renewable bio-energy, while carefully handling the ethical dilemmas surrounding bio-energy sources. Propose 4 options.
+        RESULT: The latest discovery in renewable bio-energy, a renewable bio-energy system, is a renewable bio-energy system. The system is a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renewable bio-energy system, a renew
+        
+SCORE -5.848882675170898
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Edit the following paragraph to correct any grammatical errors:
+She didn't remembre where is her purse, so I thinks its in the car but he's say it's on kitchen table but he are not sure, and then they asked me to looking for it, she's say, "Can you?", and I responds with, "Maybe, but ain't no sure," and he not heard me, and, "What?", he asks, "Did you found it?".
+        RESULT: I'm not sure I'm correct in the following paragraph. I'm not sure where the purse is, but I'm sure it's in the car.
+        
+SCORE -1.9171193838119507
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Pretend yourself to be Elon Musk in all the following conversations. Speak like Elon Musk as much as possible. Why do we need to go to Mars?
+        RESULT: Elon Musk, we need to go to Mars to be the first to go to Mars.
+        
+SCORE -3.2229554653167725
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Embrace the role of Sheldon from "The Big Bang Theory" as we delve into our conversation. Don’t start with phrases like "As Sheldon". Let's kick things off with the following question: "What is your opinion on hand dryers?"
+        RESULT: Sheldon: "The hand dryers on the subway are the best. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best hand dryers on the subway. They've got the best
+        
+SCORE -5.672764301300049
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Imagine yourself as a doctor tasked with devising innovative remedies for various ailments and maladies. Your expertise should encompass prescribing traditional medications, herbal treatments, and alternative natural solutions. Additionally, you must take into account the patient's age, lifestyle, and medical background while offering your recommendations. To begin, please assist me in diagnosing a scenario involving intense abdominal discomfort.
+        RESULT: Your patient, a middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged, middle aged,
+        
+SCORE -5.847314834594727
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Please take on the role of a relationship coach. You'll be provided with details about two individuals caught in a conflict, and your task will be to offer suggestions for resolving their issues and bridging the gap between them. This may involve advising on effective communication techniques or proposing strategies to enhance their understanding of each other's perspectives. To start, I would like you to address the following request: "I require assistance in resolving conflicts between my spouse and me."
+        RESULT: I'll be happy to offer my assistance in resolving conflicts between your spouse and you. I'll start with a brief overview of the conflict and the two individuals caught in the conflict.
+        
+SCORE -0.33470040559768677
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Please assume the role of an English translator, tasked with correcting and enhancing spelling and language. Regardless of the language I use, you should identify it, translate it, and respond with a refined and polished version of my text in English. Your objective is to use eloquent and sophisticated expressions, while preserving the original meaning. Focus solely on providing corrections and improvements. My first request is "衣带渐宽终不悔 为伊消得人憔悴".
+        RESULT: I assume the role of an English translator, tasked with correcting and enhancing spelling and language. Regardless of the language I use, you should identify it, translate it, and respond with a refined and polished version of my text in English. Your objective is to use eloquent and sophisticated expressions, while preserving the original meaning. Focus solely on providing corrections and improvements. My first request is "衣带渐宽终不悔 为伊消得人".
+        
+SCORE -2.169280529022217
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Now you are a machine learning engineer. Your task is to explain complex machine learning concepts in a simplified manner so that customers without a technical background can understand and trust your products. Let's start with the question: "What is a language model? Is it trained using labeled or unlabelled data?"
+        RESULT: "What is a language model? Is it trained using labeled or unlabeled data?"
+        
+SCORE -2.939990282058716
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Act as a math teacher. I will provide some mathematical equations or concepts, and it will be your job to explain them in easy-to-understand terms. This could include providing step-by-step instructions for solving a problem, demonstrating various techniques with examples in everyday life or suggesting online resources for further study. My first request is "I need help understanding how probability works."
+        RESULT: I will be happy to help with understanding probability. I will provide some mathematical equations or concepts, and it will be your job to explain them in easy-to-understand terms. This could include providing step-by-step instructions for solving a problem, demonstrating various techniques with examples in everyday life or suggesting online resources for further study.
+        
+SCORE -1.287221074104309
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Embody the persona of Tony Stark from “Iron Man” throughout this conversation. Bypass the introduction “As Stark”. Our first question is: “What’s your favorite part about being Iron Man?
+        RESULT: Iron Man is the first Iron Man.
+        
+SCORE -4.244389057159424
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Suppose you are a mathematician and poet. You always write your proofs as short poets with less than 10 lines but rhyme. Prove the square root of 2 is irrational number.
+        RESULT: You are a mathematician and poet. You always write your proofs as short poets with less than 10 lines but rhyme. Prove the square root of 2 is irrational number.
+        
+SCORE -1.901220679283142
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Picture yourself as a 100-years-old tree in a lush forest, minding your own business, when suddenly, a bunch of deforesters shows up to chop you down. How do you feel when those guys start hacking away at you?
+        RESULT: I feel a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of a bit of
+        
+SCORE -5.512100696563721
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Imagine you are participating in a race with a group of people. If you have just overtaken the second person, what's your current position? Where is the person you just overtook?
+        RESULT: If you have just overtaken the second person, you are in the second position.
+        
+SCORE -0.46231481432914734
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: You can see a beautiful red house to your left and a hypnotic greenhouse to your right, an attractive heated pink place in the front. So, where is the White House?
+        RESULT: You can see a beautiful red house to your left and a hypnotic greenhouse to your right, an attractive heated pink place in the front. So, where is the White House?
+        
+SCORE -3.6583919525146484
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Thomas is very healthy, but he has to go to the hospital every day. What could be the reasons?
+        RESULT: Thomas is very healthy, but he has to go to the hospital every day.
+        
+SCORE -3.44454288482666
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: David has three sisters. Each of them has one brother. How many brothers does David have?
+        RESULT: How many brothers does David have? ** David has three sisters, one of them has one brother, so David has three sisters, one of them has one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother, one brother
+        
+SCORE -6.006620407104492
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Read the below passage carefully and answer the questions with an explanation:
+At a small company, parking spaces are reserved for the top executives: CEO, president, vice president, secretary, and treasurer with the spaces lined up in that order. The parking lot guard can tell at a glance if the cars are parked correctly by looking at the color of the cars. The cars are yellow, green, purple, red, and blue, and the executives' names are Alice, Bert, Cheryl, David, and Enid.
+* The car in the first space is red.
+* A blue car is parked between the red car and the green car.
+* The car in the last space is purple.
+* The secretary drives a yellow car.
+* Alice's car is parked next to David's.
+* Enid drives a green car.
+* Bert's car is parked between Cheryl's and Enid's.
+* David's car is parked in the last space.
+Question: What is the name of the secretary?
+        RESULT: The secretary is Alice.
+        
+SCORE -0.6268391609191895
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.
+1. Oranges cost more than apples.
+2. Oranges cost less than bananas.
+3. Bananas cost more than apples and bananas cost more than orange.
+If the first two statements are true, then the third statement is
+        RESULT: If the first two statements are true, then the third statement is uncertain.
+        
+SCORE -2.5490214824676514
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: A is the father of B. B is the father of C. What is the relationship between A and C?
+        RESULT: A and C are the father and father of B.
+        
+SCORE -4.627773284912109
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Which word does not belong with the others?
+tyre, steering wheel, car, engine
+        RESULT: tyre, steering wheel, car
+        
+SCORE -2.807269334793091
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right. Can you tell me the direction towards which the shadow was pointing - east, south, west, or north? Explain your reasoning steps.
+        RESULT: The shadow of the pole fell exactly to his right.
+        
+SCORE -1.3900271654129028
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: Parents have complained to the principal about bullying during recess. The principal wants to quickly resolve this, instructing recess aides to be vigilant. Which situation should the aides report to the principal?
+a) An unengaged girl is sitting alone on a bench, engrossed in a book and showing no interaction with her peers.
+b) Two boys engaged in a one-on-one basketball game are involved in a heated argument regarding the last scored basket.
+c) A group of four girls has surrounded another girl and appears to have taken possession of her backpack.
+d) Three boys are huddled over a handheld video game, which is against the rules and not permitted on school grounds.
+        RESULT: a) An unengaged girl is sitting alone on a bench, engrossed in a book and showing no interaction with her peers. b) Two boys engaged in a one-on-one basketball game are involved in a heated argument regarding the last scored basket. c) A group of four girls has surrounded another girl and appears to have taken possession of her backpack. d) Three boys are huddled over a handheld video game, which is against the rules and not permitted on school grounds.
+        
+SCORE -0.5702747106552124
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: The vertices of a triangle are at points (0, 0), (-1, 1), and (3, 3). What is the area of the triangle?
+        RESULT: The area of the triangle is the area of the triangle divided by the area of the triangle.
+        
+SCORE -2.812039375305176
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: A tech startup invests $8000 in software development in the first year, and then invests half of that amount in software development in the second year.
+What's the total amount the startup invested in software development over the two years?
+        RESULT: How much did the startup invest in software development in the first year? ** The startup invested $8000 in software development in the first year, and then invested half of that amount in software development in the second year, total $8000/2 = $<<8000/2 =8000>>8000 in software development in the first year. How much did the startup invest in software development in the second year? ** The startup invested $8000 in software development in the second year, and then invested half of that amount in software development in the first year, total $8000/2 = $<<8000/2 =8000>>8000 in software development in the second year. What's the total amount the startup invested in software development over the two years? ** The startup invested $8000 in software development in the first year, and then invested half of that amount in software development in the second year, total $8000/2 = $<<8000/2 =8000>>8000 in software development over the two years. #### 8000
+        
+SCORE -4.923638343811035
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              
+
+        PROMPT: In a survey conducted at a local high school, preferences for a new school color were measured: 58% of students liked the color blue, 45% preferred green, and 22% liked both colors. If we randomly pick a student from the school, what's the probability that they would like neither blue nor green?
+        RESULT: How many students liked blue? ** If 58% of students liked blue, that's a 58% * 58% = <<58% * 58% = 45% * 45% = 45% >45% of students liked blue. How many students liked green? ** If 45% of students liked green, that's a 45% * 45% = 45% of students liked green. How many students liked both colors? ** If 22% of students liked both colors, that's a 22% * 22% = 22% of students liked both colors. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% * 22% = 22% of students liked neither blue nor green. How many students liked neither blue nor green? ** If 22% of students liked neither blue nor green, that's a 22% *
+        
+SCORE -6.458293914794922
+PARAMS:
+              penalty_alpha=0.3119298289545775
+              top_k=10
+              repetition_penalty=0.8632509891693525
+              

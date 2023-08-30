@@ -1,0 +1,53 @@
+Start translation
+Found cached dataset json (/home/kosenko/.cache/huggingface/datasets/databricks___json/databricks--databricks-dolly-15k-6e0f9ea7eaa0ee08/0.0.0/fe5dd6ea2639a6df622901539cb550cf8797e5a6b2dd7af1cf934bed8e233e6e)
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 455.70it/s]
+Init model. cuda:0
+Model is initialized.
+  0%|          | 0/15011 [00:00<?, ?it/s]Virgin Australia, the trading name of Virgin Australia Airlines Pty Ltd, is an Australian-based airline. It is the largest airline by fleet size to use the Virgin brand. It commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route. It suddenly found itself as a major airline in Australia's domestic market after the collapse of Ansett Australia in September 2001. The airline has since grown to directly serve 32 cities in Australia, from hubs in Brisbane, Melbourne and Sydney.
+--------------------------------------------------
+  0%|          | 0/15011 [00:00<?, ?it/s]
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat │
+│ /training/step1_supervised_finetuning/simple_translation.py:258 in <module>  │
+│                                                                              │
+│   255 │   print("Start translation")                                         │
+│   256 │   # translate_openass()                                              │
+│   257 │   # translate_chip2()                                                │
+│ ❱ 258 │   translate_dolly(device="cuda:0")                                   │
+│   259                                                                        │
+│                                                                              │
+│ /cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat │
+│ /training/step1_supervised_finetuning/simple_translation.py:165 in           │
+│ translate_dolly                                                              │
+│                                                                              │
+│   162 │   │   │   │   texts = text.split("\n")                               │
+│   163 │   │   │   │   all_translated = []                                    │
+│   164 │   │   │   │   for text in texts:                                     │
+│ ❱ 165 │   │   │   │   │   translated = translator(text=text)                 │
+│   166 │   │   │   │   │   all_translated.append(translated)                  │
+│   167 │   │   │   │                                                          │
+│   168 │   │   │   │   translated = "\n".join(all_translated)                 │
+│                                                                              │
+│ /cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat │
+│ /training/step1_supervised_finetuning/simple_translation.py:69 in __call__   │
+│                                                                              │
+│    66 │   │   │   return results                                             │
+│    67 │                                                                      │
+│    68 │   def __call__(self, text: str):                                     │
+│ ❱  69 │   │   return self.translate(text=text)                               │
+│    70 │                                                                      │
+│    71 │   def nllb_translate(self, text: str):                               │
+│    72 │   │   inputs = self.tokenizer(text, return_tensors="pt")             │
+│                                                                              │
+│ /cephfs/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat │
+│ /training/step1_supervised_finetuning/simple_translation.py:54 in translate  │
+│                                                                              │
+│    51 │   │   }                                                              │
+│    52 │   │                                                                  │
+│    53 │   │   with torch.no_grad():                                          │
+│ ❱  54 │   │   │   text = self.encode_new_lines(text=text)                    │
+│    55 │   │   │   result = func_map[self.model_name](text)                   │
+│    56 │   │   │   result = self.decode_new_lines(result)                     │
+│    57 │   │   │   return result                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+AttributeError: 'Translator' object has no attribute 'encode_new_lines'
