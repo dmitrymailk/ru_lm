@@ -1,0 +1,1 @@
+{"hf_model_id": "dim/llama2_13b_dolly_oasst1_chip2", "k_shot": 5, "lang": "en", "output_dir": "llama2_13b_lora_our_dataset_en"}

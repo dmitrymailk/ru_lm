@@ -9,6 +9,10 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 import requests
 import json
 import uuid
+import time
+
+
+import openai
 
 
 class GoralConversation:
@@ -346,3 +350,90 @@ class GigaChatConversationAPI:
         response = response["responses"][0]["data"]
         # print("BOT RESPONSE", response)
         return response
+
+
+class YandexGPTAPI:
+    def __init__(
+        self,
+        creds_path="./yandexGPT.json",
+        generation_config_path="./yandexGPT_generation_params.json",
+    ) -> None:
+        self.creds_path = creds_path
+        self.generation_config_path = generation_config_path
+
+        self.headers = json.loads(open(self.creds_path).read())
+        self.generation_config = json.loads(open(self.generation_config_path).read())
+
+        self.chat_history = []
+
+    def send_instruct(
+        self,
+        message: str,
+    ):
+        data = {
+            "model": "general",
+            "generationOptions": self.generation_config,
+            "instructionText": message,
+        }
+
+        result = requests.post(
+            "https://llm.api.cloud.yandex.net/llm/v1alpha/instruct",
+            headers=self.headers,
+            data=json.dumps(data),
+        )
+        text = result.json()
+        text = text["result"]["alternatives"][0]["text"]
+        return text
+
+    def send_chat(self, message: str):
+        time.sleep(1)
+        new_message = {
+            "role": "user",
+            "text": message,
+        }
+        self.chat_history.append(new_message)
+
+        data = {
+            "model": "general",
+            "generationOptions": self.generation_config,
+            "messages": self.chat_history,
+        }
+
+        result = requests.post(
+            "https://llm.api.cloud.yandex.net/llm/v1alpha/chat",
+            headers=self.headers,
+            data=json.dumps(data),
+        )
+        text = result.json()
+        if not "result" in text:
+            print(text)
+        new_message = text["result"]["message"]
+        text = text["result"]["message"]["text"]
+        self.chat_history.append(new_message)
+        return text
+
+    def clear_chat(self):
+        self.chat_history = []
+
+
+class ChatGPTConversationAPI:
+    def __init__(
+        self,
+        api_key_path="./chat_gpt_token",
+    ):
+        self.api_key = open(api_key_path).read()
+        openai.api_key = self.api_key
+        self.chat_history = []
+
+    def send_message(self, message):
+        self.chat_history.append({"role": "user", "content": message})
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", messages=self.chat_history
+        )
+        self.chat_history.append(
+            {"role": "assistant", "content": response.choices[0].message.content}
+        )
+        return response.choices[0].message.content
+
+    def clear_chat_history(self):
+        self.chat_history = []

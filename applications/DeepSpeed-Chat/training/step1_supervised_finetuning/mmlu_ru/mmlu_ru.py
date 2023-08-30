@@ -19,6 +19,7 @@ from tqdm.auto import tqdm
 import categories
 import conversation
 import stats
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 logging.basicConfig(level=logging.INFO)
@@ -182,12 +183,22 @@ def load_model_components(model_id: str) -> tp.Tuple:
         "IlyaGusev/saiga_13b_lora",
         "IlyaGusev/saiga_30b_lora",
         "IlyaGusev/saiga_65b_lora",
+        "IlyaGusev/gigasaiga_lora",
+        "IlyaGusev/saiga2_13b_lora",
     ]
 
     goral_models = [
         "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_4.5B",
         "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/saiga_7b_v2",
         "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/rugpt_v1",
+        "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/self_instruct/models/goral_xglm_v2",
+        "dim/llama2_13b_dolly_oasst1_chip2",
+        "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/rulm/rulm2/rulm/self_instruct/models/saiga2_v2",
+    ]
+
+    finetuned_xglm = [
+        "dim/xglm-4.5B_ru_v10_epoch_6_step_41141",
+        "/home/kosenko/deepspeed/DeepSpeedExamples/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/models/xglm-4.5B_ru_v10/epoch=6_step=41141",
     ]
 
     if model_id in llama_models:
@@ -197,6 +208,17 @@ def load_model_components(model_id: str) -> tp.Tuple:
     elif model_id in goral_models:
         params = load_saiga_model(model_id)
         params = params[0], params[1], params[2], "goral"
+        return params
+    elif model_id in finetuned_xglm:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16,
+            device_map="auto",
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id,
+        )
+        params = tokenizer, model, 2000, "xglm"
         return params
     else:
         raise Exception(f"Probably not supported: {model_id}.")

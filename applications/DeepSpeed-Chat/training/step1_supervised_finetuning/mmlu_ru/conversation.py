@@ -74,10 +74,28 @@ class GoralConversation(Conversation):
         return prompt
 
 
+class XGLMConversation(Conversation):
+    def __init__(self):
+        super().__init__(
+            system_prompt="",
+            roles=("Human", "Assistant"),
+        )
+
+    def get_prompt(self) -> str:
+        prompt = self.system_prompt
+        for role, text in self.messages:
+            if text:
+                prompt += f"{role}:\n{text} \n"
+            else:
+                prompt += f"{role}:\n"
+        return prompt
+
+
 conversation_classes = {
     "saiga": SaigaConversation,
     "goral": GoralConversation,
     "llama": LlamaConversation,
+    "xglm": XGLMConversation,
 }
 
 
