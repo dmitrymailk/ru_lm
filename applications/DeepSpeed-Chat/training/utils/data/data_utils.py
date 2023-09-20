@@ -20,7 +20,34 @@ import re
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
-    return raw_datasets.RuChip2TranslatedV2(dataset_name, seed, local_rank)
+    if dataset_name == "dolly_original_prompt":
+        return raw_datasets.EnDollyInstructTranslated(output_path, seed, local_rank)
+    elif dataset_name == "dolly_original_prompt_v2":
+        return raw_datasets.EnDollyInstructTranslatedV2(output_path, seed, local_rank)
+    elif dataset_name == "dolly_translated_prompt":
+        return raw_datasets.RuDollyInstructTranslated(output_path, seed, local_rank)
+    elif dataset_name == "dolly_translated_prompt_v2_clean_v1":
+        return raw_datasets.RuDollyInstructTranslatedV2(output_path, seed, local_rank)
+    elif dataset_name == "chip2_instruct_alpha_prompt_ru":
+        return raw_datasets.RuChip2Translated(output_path, seed, local_rank)
+    elif dataset_name == "chip2_instruct_alpha_prompt_ru_v2_clean_v1":
+        return raw_datasets.RuChip2TranslatedV2(output_path, seed, local_rank)
+    elif dataset_name == "chip2_instruct_alpha_prompt_en":
+        return raw_datasets.EnChip2Translated(output_path, seed, local_rank)
+    elif dataset_name == "chip2_instruct_alpha_prompt_en_v2_clean_v1":
+        return raw_datasets.EnChip2TranslatedV2(output_path, seed, local_rank)
+    elif dataset_name == "openass_prompt_dataset_ru":
+        return raw_datasets.RuOpenAssTranslated(output_path, seed, local_rank)
+    elif dataset_name == "openass_prompt_dataset_ru_v2_clean_v1":
+        return raw_datasets.RuOpenAssTranslatedV2(output_path, seed, local_rank)
+    elif dataset_name == "openass_prompt_dataset_en":
+        return raw_datasets.EnOpenAssTranslated(output_path, seed, local_rank)
+    elif dataset_name == "openass_prompt_dataset_en_v2_clean_v1":
+        return raw_datasets.EnOpenAssTranslatedV2(output_path, seed, local_rank)
+    else:
+        raise RuntimeError(
+            f"We do not have configs for dataset {dataset_name}, but you can add it by yourself in raw_datasets.py."
+        )
 
 
 def get_shuffle_idx(seed, size):
